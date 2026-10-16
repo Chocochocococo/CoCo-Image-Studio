@@ -1,0 +1,30 @@
+# 行尾規則寫在這裡，就不會受各人的 core.autocrlf 影響。
+# 沒有這份檔案的話，有人用 autocrlf=false 提交回 CRLF，
+# diff 會顯示整份檔案全改，真正的改動就被淹掉了。
+
+# 預設：由 git 判斷是不是文字檔，是的話儲存庫裡一律存 LF
+* text=auto
+
+# 批次檔一定要 CRLF。
+# CoCo.bat 與 setup.bat 全靠 goto 與標籤運作，
+# cmd.exe 解析標籤和 if 多行區塊時對行尾敏感，LF-only 會出怪毛病。
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Python、shell、設定檔一律 LF，三個平台都通吃
+*.py   text eol=lf
+*.sh   text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+
+# 文件與 wildcards 交給 text=auto 即可
+# （template.py 讀進來會逐行 strip，多的 \r 不會混進提示詞）
+
+# 圖片不要做任何轉換
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+
+# 標籤資料庫是二進位，不要做行尾轉換
+*.db binary

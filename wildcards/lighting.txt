@@ -1,0 +1,6 @@
+# 打光
+soft lighting
+dramatic lighting
+rim lighting
+backlighting
+cinematic lighting

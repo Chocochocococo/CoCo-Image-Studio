@@ -1,0 +1,11 @@
+# 輕量安裝（CoCo.bat 第一次安裝時選 2）：圖庫、探索、比較、重組、輸出、資源庫，沒有生成引擎。
+# 版本照 requirements-lock.txt：CoCo.bat 安裝時加 -c requirements-lock.txt，這裡只寫名字，不另外鎖。
+# torch 另外裝 CPU 版（版本在 CoCo.bat）。
+# 探索的看圖模型（SigLIP2）與提示詞的 token 計數
+transformers
+safetensors
+# HTTPS 用 Windows 的憑證（防毒軟體掃 HTTPS 時下載才不會憑證錯誤，core/certs.py）
+truststore
+# 縮圖、輸出（裁切、調整、拼接）、Krita 檔
+pillow
+numpy

@@ -1,0 +1,11 @@
+# 持久化變數：定義一次，之後在任何模板裡用 {get:名稱} 或 ${名稱} 取用
+# 格式： 名稱 = 值      （值可以包含 {A|B} 之類的模板語法）
+#
+# 角色外貌 ─────────────────────────────────────────
+my_oc     = silver long hair, blue eyes, hair ribbon, pale skin
+aoi       = black twintails, red eyes, choker
+mizu      = pink short hair, green eyes, hairclip
+
+# 常用組合 ─────────────────────────────────────────
+quality   = masterpiece, best quality, amazing quality, newest
+neg_base  = worst quality, low quality, bad anatomy, bad hands, watermark

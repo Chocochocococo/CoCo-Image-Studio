@@ -1,0 +1,33 @@
+// 關於（⚙ 設定 → 關於）：程式的簡短介紹、官網、GitHub、贊助。
+// 對外連結集中在這裡（README 與 .github/FUNDING.yml 的贊助連結要跟這裡一樣，tests/test_about.py 檢查）。
+// 空字串＝還沒有，不顯示：官網與 GitHub 等公開版發布後再填（2026-10-16）
+
+import {h} from "./dom.js";
+
+export const LINKS = {
+  site: "",
+  github: "",
+  ecpay: "https://p.ecpay.com.tw/D6622EF",       // 綠界：台灣（信用卡、ATM、超商）
+  kofi: "https://ko-fi.com/chocochocococo",       // Ko-fi：海外（信用卡、PayPal）
+};
+const SPONSORS = [["ecpay", "about.ecpay", "about.ecpayHint"], ["kofi", "about.kofi", "about.kofiHint"]];
+
+// 外部網站一律開新分頁（CoCo 這一頁留著）
+const out = (url, cls, key) => h(`a.${cls}`, {href: url, target: "_blank", rel: "noopener noreferrer"},
+  h("span", {"data-i18n": key}), " ↗");
+
+export function aboutBody() {
+  const links = [["site", "about.site"], ["github", "about.github"]].filter(([k]) => LINKS[k]);
+  return [
+    h("section.ssec", {},
+      h("h3", {text: "CoCo Image Studio"}),
+      h("p.aboutp", {"data-i18n": "about.intro"}),
+      links.length ? h("div.aboutlinks", {}, links.map(([k, key]) => out(LINKS[k], "pill", key))) : null),
+    h("section.ssec", {},
+      h("h3", {"data-i18n": "about.support"}),
+      h("p.hint", {"data-i18n": "about.supportHint"}),
+      h("div.aboutsp", {}, SPONSORS.filter(([k]) => LINKS[k]).map(([k, name, hint]) => h("div.spcard", {},
+        h("b", {"data-i18n": name}),
+        h("span.hint", {"data-i18n": hint}),
+        out(LINKS[k], "pill.primary", "about.go")))))];
+}

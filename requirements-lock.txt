@@ -1,0 +1,64 @@
+# 2026-08-08 在 RTX 5080 / Python 3.11 驗證過的生成環境。
+# torch / torchvision 使用 CUDA 專用 index，版本固定在 CoCo.bat。
+diffusers==0.39.0
+transformers==5.14.1
+accelerate==1.14.0
+safetensors==0.8.0
+sentencepiece==0.2.2
+protobuf==7.35.1
+peft==0.20.0
+pillow==12.2.0
+# diffusers 的 Beta sigma 分佈（use_beta_sigmas）要用；沒有它選 Beta 排程會失敗
+scipy==1.17.1
+# ControlNet 的前處理（canny、深度圖等）。以前跟著 ultralytics（修臉的找臉）一起裝；
+# 2026-10-04 找臉改成 CoCo 自己跑（core/yolo.py），ultralytics（AGPL）拿掉，這個直接列
+opencv-python==5.0.0.93
+# 排程生成讀顯示卡溫度（pynvml）。以前也是跟著 ultralytics 裝；讀不到時改問 nvidia-smi，比較慢
+nvidia-ml-py==13.615.71
+# int8 模型直接用 int8 算（Qwen Image 2.1 的 int8 + convrot 檔）。
+# ComfyUI 官方的運算套件（Apache 2.0）；沒裝的話 CoCo 改用先還原再算（比較慢）
+comfy-kitchen==0.2.37
+# HTTPS 用 Windows 的憑證（core/certs.py）：防毒軟體掃 HTTPS 時，huggingface_hub 的下載（第一次載入 SDXL 單檔要抓的設定檔）
+# 才不會憑證錯誤。MIT
+truststore==0.10.4
+
+# ---- 往下依賴的套件（tools/lock_deps.py 產生，不要手改）
+# 照 Python 3.11、Windows 上現在能正常跑的環境記下來；torch／torchvision 的版本在 CoCo.bat
+annotated-doc==0.0.5
+anyio==4.14.2
+certifi==2026.7.22
+charset-normalizer==3.4.9
+click==8.4.2
+colorama==0.4.6
+filelock==3.29.0
+fsspec==2026.4.0
+h11==0.16.0
+hf-xet==1.6.0
+httpcore==1.0.9
+httpx==0.28.1
+huggingface_hub==1.26.0
+idna==3.18
+importlib_metadata==9.0.0
+Jinja2==3.1.6
+markdown-it-py==4.2.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+mpmath==1.3.0
+networkx==3.6.1
+numpy==2.4.4
+packaging==26.2
+psutil==7.2.2
+Pygments==2.20.0
+PyYAML==6.0.3
+regex==2026.7.19
+requests==2.34.2
+rich==15.0.0
+setuptools==78.1.0
+shellingham==1.5.4
+sympy==1.14.0
+tokenizers==0.22.2
+tqdm==4.70.0
+typer==0.27.1
+typing_extensions==4.15.0
+urllib3==2.7.0
+zipp==4.1.0

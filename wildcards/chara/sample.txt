@@ -1,0 +1,4 @@
+# 角色：每行放該角色的完整特徵
+silver long hair, blue eyes, hair ribbon
+black twintails, red eyes, choker
+pink short hair, green eyes, hairclip

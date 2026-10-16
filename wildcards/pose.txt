@@ -1,0 +1,8 @@
+# 姿勢：一行一個
+standing
+sitting
+leaning against wall
+kneeling
+lying on back
+arms crossed
+hands behind back

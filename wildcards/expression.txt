@@ -1,0 +1,8 @@
+# 表情
+smile
+gentle smile
+neutral expression
+angry
+surprised
+sleepy
+blushing

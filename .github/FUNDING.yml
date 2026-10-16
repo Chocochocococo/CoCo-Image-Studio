@@ -1,0 +1,4 @@
+# GitHub 專案頁上方的「Sponsor」按鈕（https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository）
+# 連結要跟 web/js/about.js 的 LINKS 一樣（tests/test_about.py 檢查）
+ko_fi: chocochocococo
+custom: ["https://p.ecpay.com.tw/D6622EF"]

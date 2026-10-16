@@ -1,0 +1,84 @@
+# ── 虛擬環境 ──────────────────────────────
+venv/
+.venv/
+
+# ── Python 快取 ───────────────────────────
+__pycache__/
+*.py[cod]
+*.pyd
+
+# ── 模型（大檔，不進版控）─────────────────
+models/
+hf_cache/
+# 搬模型資料夾時狀態檔改路徑前的備份（server/modelhome.py）
+backups/
+
+# ── 圖片與產出 ────────────────────────────
+outputs/
+# 成對圖輔助自動畫的成對圖（沒有資料集時的預設位置，server/pairmaker.py 的 default_root）
+datasets/
+.thumbs/
+.trash/
+prompts_out.txt
+
+# ── 壓縮檔 ────────────────────────────────
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
+# ── 個人設定與介面狀態 ────────────────────
+# 預設值在 config.py（有進版控），這兩個是本機的個人設定，
+# 而且介面每次操作都會重寫，追蹤了只會讓 git status 永遠是髒的
+settings.json
+gallery_ui.json
+asset_notes.json
+compare_sets.json
+recipes.json
+queue.json
+user_tags.db
+user_tags.db-journal
+presets.json
+datasets.json
+masks/
+covers/
+edits/
+
+# ── 圖庫索引（掃描就會重建）───────────────
+gallery.db
+gallery.db-shm
+gallery.db-wal
+explore.db
+explore.db-shm
+explore.db-wal
+
+# ── 標籤庫的個人修正 ──────────────────────
+# assets/tags/base.db 是隨專案附帶的唯讀基準庫，要進版控；
+# 使用者自己改的內容存這裡，不進版控
+tags_user.db
+
+# ── 備份與暫存 ────────────────────────────
+*.bak
+*.tmp
+*.log
+
+# ── 編輯器與系統 ──────────────────────────
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# ControlNet 從電腦選的參考圖（server/controlnet.py）
+cnrefs/
+
+# 算過的 LoRA 與模型的雜湊值（server/lorahash.py；舊名 lora_hashes.json）
+file_hashes.json
+lora_hashes.json
+
+# 發布到公開版前檢查的個人資料清單（tools/release.py；清單本身就是個人資料）
+release_blocklist.txt
+
+# 安裝方式（CoCo.bat 第一次安裝時問：full／lite；server/install.py）
+install_mode.txt

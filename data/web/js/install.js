@@ -1,5 +1,7 @@
-// 安裝方式（server/install.py）：輕量安裝沒有生成引擎，生成、精修、訓練這幾頁換成說明＋「改為完整安裝」
-// （頁面留著，讓人知道有這些功能；使用者決定的，2026-10-15）。完整安裝時什麼都不變。
+// 安裝方式（server/install.py）：輕量安裝沒有生成引擎。完整安裝時什麼都不變。
+// - 生成頁照常能用（提示詞、標籤、資源庫、Recipe）：在 CoCo 編好提示詞再拿去別的地方生成，只有生成鈕要完整安裝，
+//   按了在旁邊說明（使用者要求，2026-10-16）
+// - 精修、訓練：畫面照常畫出來當預覽，上面蓋一層半透明遮罩＋說明卡＋「改為完整安裝」（同上；原本整頁只有說明卡）
 // 文字用 t() 直接填：換語言時整頁重畫（main.js 的 render），設定視窗也是重畫
 
 import {get, post} from "./api.js";
@@ -14,8 +16,14 @@ export async function loadInstall() {
   return INSTALL;
 }
 
+// 這一頁的主要功能要完整安裝
 export function needsFull(space, step) {
   return INSTALL.lite && (space === "train" || (space === "studio" && FULL_STEPS.includes(step)));
+}
+
+// 這一頁只能看（蓋遮罩）：要完整安裝的頁裡，生成頁除外
+export function previewOnly(space, step) {
+  return needsFull(space, step) && !(space === "studio" && step === "generate");
 }
 
 // 說明下面那一塊：按鈕、已設定（下次開啟補裝）、沒有 NVIDIA 顯示卡。按了之後就地換掉
@@ -34,12 +42,24 @@ function action() {
   return box;
 }
 
-// 生成、精修、訓練在輕量時的那張卡
+// 精修、訓練在輕量時蓋在畫面上的那張卡
 export function liteCard() {
   return h("section.card.litecard", {"aria-labelledby": "liteTitle"},
     h("h2.title", {id: "liteTitle", text: t("lite.title")}),
     h("p", {text: t("lite.body")}),
     action());
+}
+
+// 精修、訓練在輕量時：畫面照常畫（不能操作），上面蓋遮罩＋說明卡
+export function litePreview(screen) {
+  screen.inert = true;
+  return h("div.litepv", {}, screen, h("div.liteveil", {}, liteCard()));
+}
+
+// 生成鈕在輕量時旁邊那個小視窗的內容（generate.js 開；生成台的其他東西照常能用）。
+// 不在這裡 import pop.js：它一載入就要用到 document，node 的測試只載入這個檔
+export function litePopBody() {
+  return [h("h3.title", {text: t("lite.genTitle")}), h("p.litep", {text: t("lite.genBody")}), action()];
 }
 
 // ⚙ 設定 →「其他」：目前的安裝方式；輕量時加上改為完整的按鈕

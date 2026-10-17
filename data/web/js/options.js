@@ -252,6 +252,22 @@ export function removeEmb(prompt, name) {
     .replace(/^[\s,]+/, "");
 }
 
+// ── LoRA 觸發詞（資源庫的觸發詞按鈕）：不分大小寫、前後不能接著字母數字底線連字號（girl 不算 1girl 裡有）。
+// <lora:…> 標籤裡的不算：觸發詞常常就是 LoRA 的檔名，以前直接找子字串，套用中的 LoRA 讓它的觸發詞永遠加不進去 ──
+const trigRe = word => new RegExp(`(?<![\\p{L}\\p{N}_\\-])${escRe(word)}(?![\\p{L}\\p{N}_\\-])`, "iu");
+
+export function hasTrigger(prompt, word) {
+  const w = String(word || "").trim();
+  return !!w && trigRe(w).test(String(prompt || "").replace(/<[^<>]*>/g, " "));
+}
+
+export function addTrigger(prompt, word) {
+  const p = String(prompt || "");
+  if (hasTrigger(p, word)) return p;
+  const base = p.replace(/[\s,]*$/, "");
+  return `${base}${base ? ", " : ""}${String(word).trim()}`;
+}
+
 export function loraTags(prompt) {
   const out = [];
   for (const m of String(prompt || "").matchAll(LORA_TAG)) {

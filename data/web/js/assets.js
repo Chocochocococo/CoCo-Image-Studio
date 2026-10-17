@@ -18,7 +18,8 @@ import {$, h, stem} from "./dom.js";
 import {editingField, genSettings, refreshPreset, reloadSettings, setField, setPromptText} from "./generate.js";
 import {lang, t, translate} from "./i18n.js";
 import {showInLibrary} from "./library.js";
-import {ARCH_LABEL, addEmb, addLora, fmtWeight, hasEmb, hasLora, loraTags, removeEmb, removeLora, setLoraWeight} from "./options.js";
+import {ARCH_LABEL, addEmb, addLora, addTrigger, fmtWeight, hasEmb, hasLora, hasTrigger, loraTags, removeEmb, removeLora,
+        setLoraWeight} from "./options.js";
 import {closePop, openPop} from "./pop.js";
 import {multiEnabled, on, openWindow, send} from "./sync.js";
 import {info} from "./hint.js";
@@ -567,11 +568,11 @@ function trigSection(it, prompt) {
         h("span.sp"),
         h("button.mini", {type: "button", "data-i18n": "assets.trigEdit", on: {click: edit}})),
       it.triggers.length ? h("div.atrig", {}, it.triggers.map(tr => h("button.chip", {
-        type: "button", title: t("assets.addTrigger"), "aria-pressed": String(low(prompt).includes(low(tr))),
+        type: "button", title: t("assets.addTrigger"), "aria-pressed": String(hasTrigger(prompt, tr)),
         on: {click: e => {
           const p = genSettings().PROMPT || "";
-          if (low(p).includes(low(tr))) return;
-          setPromptText(`${p.replace(/[\s,]*$/, "")}${p.trim() ? ", " : ""}${tr}`);
+          if (hasTrigger(p, tr)) return;
+          setPromptText(addTrigger(p, tr));
           e.currentTarget.setAttribute("aria-pressed", "true");
         }}}, tr)))
         : h("p.dim.small", {"data-i18n": "assets.trigNone"}));

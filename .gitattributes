@@ -25,6 +25,9 @@
 *.jpg  binary
 *.jpeg binary
 *.webp binary
+# 最外層的啟動程式（data/tools/make_launcher.py 編的）
+*.exe  binary
+*.ico  binary
 
 # 標籤資料庫是二進位，不要做行尾轉換
 *.db binary

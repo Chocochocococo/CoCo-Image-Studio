@@ -32,11 +32,11 @@ import {datasetScreen, initDataset, showDataset} from "./dataset.js";
 import {datasetsScreen, showDatasets} from "./datasets.js";
 import {initTrain, showTrain, trainScreen} from "./train.js";
 import {initRefineBatch} from "./refinebatch.js";
-import {INSTALL, liteCard, loadInstall, needsFull} from "./install.js";
+import {INSTALL, litePreview, loadInstall, previewOnly} from "./install.js";
 import {MULTI_MODES, assetsWindowOpen, multiEnabled, on, openWindow, send} from "./sync.js";
 import {openSyntax} from "./syntax.js";
 import {DEFAULT_THEME, THEMES, applyTheme, swatches} from "./theme.js";
-import {openViewer} from "./viewer.js";
+import {initViewer, openViewer} from "./viewer.js";
 import {Wall} from "./wall.js";
 
 const ui = {lang: "", theme: DEFAULT_THEME, mode: "dark", scale: 1, multiwin: "auto"};
@@ -81,8 +81,8 @@ const TRAIN_READY = ["datasets", "dataset", "train"];
 function bar() {
   const spaces = h("nav.spaces", {"data-i18n-aria": "space.aria"},
     SPACES.map(([key, href]) => h("a", {
-      href: key === "studio" && STUDIO_STEPS.includes(ui.laststep) && !needsFull(key, ui.laststep) ? `#${ui.laststep}`
-        : key === "studio" && INSTALL.lite ? "#explore"          // 輕量安裝：工作室從探索開始（生成要完整安裝）
+      href: key === "studio" && STUDIO_STEPS.includes(ui.laststep) && !previewOnly(key, ui.laststep) ? `#${ui.laststep}`
+        : key === "studio" && INSTALL.lite ? "#explore"          // 輕量安裝：工作室從探索開始（精修只能看）
         : key === "train" && TRAIN_READY.includes(ui.trainstep) ? `#${ui.trainstep}` : href,
       "aria-current": key === space ? "page" : null, "aria-disabled": href ? null : "true",
       "data-i18n-title": href ? null : "space.soon",
@@ -135,8 +135,9 @@ async function refreshStatus() {
     const arch = ARCH_LABEL[s.MODEL_ARCH] || s.MODEL_ARCH;
     if (model) { mb.removeAttribute("data-i18n"); mb.textContent = arch ? `${model} · ${arch}` : model; }
     const e = $("stEngine");
-    e.querySelector(".dot").classList.toggle("on", !!g.alive);
-    e.querySelector("span:last-child").dataset.i18n = g.alive ? "status.engineOn" : "status.engineOff";
+    // 輕量安裝沒有生成引擎：子行程只拿來數 token，說「已啟動」會讓人以為可以生成
+    e.querySelector(".dot").classList.toggle("on", !!g.alive && !INSTALL.lite);
+    e.querySelector("span:last-child").dataset.i18n = INSTALL.lite ? "set.install.lite" : g.alive ? "status.engineOn" : "status.engineOff";
     translate(e);
     // 頂端列排不下時這兩格會用「…」收尾：滑過時看完整的
     m.title = mb.textContent;
@@ -293,8 +294,8 @@ function render() {
   studioWall?.saveScroll();
   libWall?.saveScroll();
   // 工作室最後開的是哪一步：頂端的「工作室」連結下次就指到這裡（存起來，重開也記得）
-  // 輕量安裝時要完整安裝的頁（只有說明卡）不記，下次不會一進來就是說明
-  const lite = needsFull(space, step);
+  // 輕量安裝時只能看的頁（精修、訓練）不記，下次不會一進來就是遮罩
+  const lite = previewOnly(space, step);
   if (space === "studio" && STUDIO_STEPS.includes(step) && ui.laststep !== step && !lite) {
     ui.laststep = step;
     post("/api/ui", {laststep: step}).catch(() => { /* 只影響下次 */ });
@@ -306,16 +307,16 @@ function render() {
   }
   closePop();
   const app = $("app");
-  // 輕量安裝：生成頁換成說明卡、右邊的牆照樣有；精修與訓練整頁只有說明卡
-  const main = lite && step !== "generate" ? h("main.main.liteonly", {}, liteCard())
-    : space === "library" ? libraryScreen()
+  // 輕量安裝：精修與訓練照常畫出來，蓋上遮罩＋說明卡（litePreview）；生成頁照常（只有生成鈕要完整安裝，generate.js）
+  const screen = space === "library" ? libraryScreen()
     : space === "train" ? (step === "train" ? trainScreen() : step === "datasets" ? datasetsScreen() : datasetScreen())
     : step === "explore" ? exploreScreen()
     : step === "compare" ? compareScreen()
     : step === "recombine" ? recombineScreen()
     : step === "refine" ? refineScreen()
     : step === "output" ? editorScreen()
-    : h("main.main", {}, lite ? liteCard() : railCard(), studioWallCard());
+    : h("main.main", {}, railCard(), studioWallCard());
+  const main = lite ? litePreview(screen) : screen;
   app.replaceChildren(h("div.shell", {"data-space": space},
     bar(),
     main,
@@ -323,7 +324,6 @@ function render() {
   translate(app);
   fitFlow();
   if (space === "library") { afterRender(); showLibrary(); libWall?.restoreScroll(); }
-  else if (lite && step !== "generate") { /* 只有說明卡 */ }
   else if (space === "train") { if (step === "train") showTrain(); else if (step === "datasets") showDatasets(); else showDataset(); }
   else if (step === "explore") showExplore();
   else if (step === "compare") showCompare();
@@ -393,6 +393,7 @@ document.addEventListener("click", e => {
                          emptyKey: () => (GF.count() ? "lib.empty" : "wall.empty")});
   GF.wall = studioWall;
   libWall = initLibrary(ui);
+  initViewer(ui);
   initRefine(ui);
   initEditor(ui);
   initBatch(ui);

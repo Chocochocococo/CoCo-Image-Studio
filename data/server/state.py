@@ -28,9 +28,10 @@ def _version():
     except Exception:
         pass
     try:
-        head = (ROOT / ".git" / "HEAD").read_text(encoding="utf-8").strip()
+        git = ROOT.parent / ".git" if not (ROOT / ".git").exists() else ROOT / ".git"     # 程式在 data 裡，repo 在上一層
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
         if head.startswith("ref:"):
-            head = (ROOT / ".git" / head[4:].strip()).read_text(encoding="utf-8").strip()
+            head = (git / head[4:].strip()).read_text(encoding="utf-8").strip()
         return head[:7]
     except OSError:
         return ""
@@ -57,6 +58,8 @@ UI_DEFAULT = {"fs": 1.0, "colw": 260, "genw": 190, "recent": [],
               "scale": 1.0,
               # 生成台的提示詞用標籤模式（False＝純文字）
               "chips": False,
+              # 看大圖的提示詞用標籤模式顯示（點一下複製那個標籤）
+              "vchips": False,
               # 精修頁：目前的底圖（圖庫 id，0＝還沒選）與修改幅度
               "rsrc": 0, "rstrength": 0.5,
               # 精修頁：方式（whole／inpaint）、局部重繪的修改幅度、筆刷、工具、範圍、邊緣柔化

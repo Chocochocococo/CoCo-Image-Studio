@@ -46,6 +46,33 @@ export async function tagGrouper(names) {
 }
 
 const showZh = () => lang().startsWith("zh");
+
+// ── 唯讀的標籤（看大圖的提示詞，使用者要求 2026-10-16）──
+// 跟標籤模式一樣的顏色、權重與中文翻譯，但不能改：wrap(el, text) 由呼叫端決定點了做什麼（看大圖是複製那個標籤）。
+// 標籤庫的翻譯查回來再補畫一次
+export function chipView(text, wrap) {
+  const list = parsePrompt(text);
+  const box = h("div.vchips");
+  const one = c => {
+    const info = c.kind === "tag" ? INFO.get(c.text) : null;
+    let label = c.text, w = c.kind === "tag" ? c.weight : null;
+    if (c.kind === "lora") { const [l] = loraTags(c.text); if (l) { label = l.name; w = l.weight; } }
+    const shown = w != null ? Math.round(w * 100) / 100 : 1;
+    return wrap(h("span.chip", {"data-kind": c.kind, "data-c": groupOf(info?.cat) || null},
+      c.kind === "lora" ? h("span.lk", {text: "LoRA"}) : null,
+      h("span.t", {text: label || t("chip.none")}),
+      showZh() && info?.zh ? h("span.zh", {text: info.zh}) : null,
+      Math.abs(shown - 1) >= 0.005 ? h("span.w", {text: fmtWeight(shown), "data-lo": shown < 1 ? "" : null}) : null), chipText(c));
+  };
+  const draw = () => box.replaceChildren(...list.map(c => c.opts
+    ? h("span.grp", {"data-kind": c.kind}, h("span.gh", {}, h("span", {text: t(c.kind === "cart" ? "chip.cart" : "chip.rand", {n: c.opts.length})})),
+        h("span.gb", {}, c.opts.filter(o => o.trim()).map(o => one(parseChip(o)))))
+    : one(c)));
+  draw();
+  const names = list.flatMap(c => c.opts ? c.opts.map(parseChip) : [c]).filter(c => c.kind === "tag").map(c => c.text);
+  lookup(names).then(found => { if (found && box.isConnected) draw(); });
+  return box;
+}
 const clampW = w => Math.max(-2, Math.min(3, Math.round(w * 100) / 100));
 
 // ── 標籤模式 ─────────────────────────────────────

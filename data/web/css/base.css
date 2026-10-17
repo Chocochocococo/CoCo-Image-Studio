@@ -83,10 +83,13 @@ a { color: inherit; }
 }
 @media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .card { background: var(--p1); border-radius: var(--r-card); }
-/* 輕量安裝時生成、精修、訓練的說明卡（install.js）；精修與訓練整頁只有這張，置中 */
-.litecard { align-self: start; display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; }
-.litecard p, .litebox p { margin: 0; line-height: 1.6; }
-.main.liteonly { grid-template-columns: minmax(0, 560px); justify-content: center; }
+/* 輕量安裝（install.js）：精修、訓練照常畫出來當預覽，蓋一層半透明遮罩，說明卡置中；生成鈕看起來是鎖住的 */
+.litepv { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.liteveil { position: absolute; inset: 0 16px 16px; z-index: 5; display: grid; place-items: center; padding: 24px;
+  border-radius: var(--r-card); background: color-mix(in srgb, var(--bg) 45%, transparent); backdrop-filter: blur(1px); }
+.litecard { width: min(560px, 100%); display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; box-shadow: var(--sh); }
+.litecard p, .litebox p, .litep { margin: 0; line-height: 1.6; }
+.gobtn[data-lite] { opacity: .55; cursor: pointer; }
 .litebox { display: flex; flex-direction: column; gap: 8px; }
 .rail { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .rail .title { font-size: 22px; }
@@ -478,6 +481,13 @@ details.vsec summary { cursor: pointer; }
 .cp[data-copied]::after { content: attr(data-copied); position: absolute; top: 4px; right: 6px; padding: 1px 8px; border-radius: 999px;
   font-size: 11px; line-height: 18px; background: var(--ac); color: var(--ac-ink); pointer-events: none; white-space: nowrap; }
 .rchip.cp[data-copied]::after { top: 50%; transform: translateY(-50%); }
+/* 提示詞的標籤模式（viewer.js 的 vchips）：跟 .vtext 同一塊底，一個標籤一格，點一下複製那個標籤 */
+.vsec > .vsh { display: flex; align-items: center; gap: 6px; }
+.vchips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; background: var(--p2); border-radius: 12px; padding: 10px;
+  max-height: 260px; overflow: auto; }
+.vchips .chip { cursor: copy; }
+.vchips .grp { cursor: default; }
+.vchips .chip.cp[data-copied]::after { top: 50%; right: 4px; transform: translateY(-50%); }
 .vpath { margin: 0; font-size: 11.5px; color: var(--dm); overflow-wrap: anywhere; user-select: all; }
 @media (max-width: 800px) {
   .viewer { grid-template-columns: 1fr; grid-template-rows: minmax(0, 55vh) minmax(0, 1fr); }

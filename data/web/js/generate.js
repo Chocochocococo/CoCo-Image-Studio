@@ -15,6 +15,7 @@ import {on, send} from "./sync.js";
 import {putBack} from "./inflight.js";
 import {info} from "./hint.js";
 import {ChipBox, attachAC} from "./chips.js";
+import {INSTALL, litePopBody} from "./install.js";
 import {ARCH_LABEL, AUTO_ON_OFF, COND_MODES, DYN_SYNTAX, SAMPLER_GROUPS, SCHEDULES, SIZES,
         VRAM_MODES, loraTags, FLOW_ARCHS, shiftKey} from "./options.js";
 
@@ -705,7 +706,9 @@ function goBar() {
     $("f_BATCH").value = v;
   };
   return h("div.go", {},
-    h("button.gobtn", {type: "button", id: "btnGo", on: {click: run}},
+    // 輕量安裝：看起來是鎖住的，按了在旁邊說明要完整安裝（生成台其他東西照常能用）
+    h("button.gobtn", {type: "button", id: "btnGo", "data-lite": INSTALL.lite ? "" : null,
+                       "aria-haspopup": INSTALL.lite ? "dialog" : null, on: {click: run}},
       h("span.l", {id: "goLabel", "data-i18n": "gen.go"}),
       h("kbd", {text: "Ctrl ⏎"})),
     h("div.cnt", {role: "group", "data-i18n-aria": "gen.batch", "data-i18n-title": "gen.batch"},
@@ -1003,6 +1006,7 @@ function drawQueueCool(c) {
 }
 
 export async function run() {
+  if (INSTALL.lite) { const go = $("btnGo"); if (go) openPop("popLite", go, litePopBody); return; }      // Ctrl+Enter 也一樣
   const d = await submit();
   if (d.error) { say(d.error, "err"); return; }
   say(d.warn ? t("gen.queuedWarn", {n: d.queued, warn: d.warn}) : t("gen.queued", {n: d.queued}),

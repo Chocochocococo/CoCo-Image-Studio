@@ -91,7 +91,7 @@ def load_vars(path):
       變數     —— 一個名稱對應一段固定內容，用 ${名稱} 取用
       萬用字元 —— 一個檔案裡有很多行選項，用 __檔名__ 隨機抽一行
 
-    所以變數放在專案根目錄的 variables.txt，不放在 wildcards 資料夾。
+    所以變數放在 data 資料夾的 variables.txt，不放在 wildcards 資料夾。
     """
     out = {}
     if not path:

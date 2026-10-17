@@ -16,8 +16,12 @@ import {fmtWeight as fmtW, keepLoras, mapSampler, renameLora, shiftKey, withLora
 import {popoutOpener} from "./winrole.js";
 import {Wall} from "./wall.js";
 import {movePop, moveText, removeFiles, trashClick, trashLabel, trashText} from "./fileacts.js";
+import {chipView} from "./chips.js";
 
-const V = {wall: null, idx: -1, d: null, el: null, back: null, seq: 0};
+const V = {wall: null, idx: -1, d: null, el: null, back: null, seq: 0, ui: null};
+
+// 介面偏好（main.js 啟動時給）：提示詞要不要用標籤模式顯示（ui.vchips）
+export function initViewer(ui) { V.ui = ui; }
 
 // 圖的網址：圖庫的圖用 id；探索找到的參考圖（kind: "ref"，rid＝參考圖的 id）走探索的 API
 const urls = it => (it.kind === "ref"
@@ -174,6 +178,18 @@ export function copyable(el, text) {
   return el;
 }
 
+// 提示詞的「標籤」開關：記在介面偏好（下次打開看大圖照舊），整個右欄照同一張重畫
+function toggleChips(it) {
+  if (!V.ui || !V.d) return;
+  V.ui.vchips = !V.ui.vchips;
+  post("/api/ui", {vchips: V.ui.vchips}).catch(() => { /* 只影響下次 */ });
+  const panel = $("vPanel"), top = panel.scrollTop;
+  panel.replaceChildren(...detailPanel(V.d, it).filter(Boolean));
+  translate(panel);
+  panel.scrollTop = top;
+  panel.querySelector(".vchipbtn")?.focus();
+}
+
 function detailPanel(d, it) {
   const extra = d.extra || {};
   const shift = extra.Shift ?? extra.shift;
@@ -197,6 +213,10 @@ function detailPanel(d, it) {
   // 搬移、丟進回收桶：只有從兩道圖庫的牆（工作室、圖庫空間）打開時有——比較、探索的清單不是圖庫的牆，丟掉之後更新不了
   // （使用者回報 2026-10-10：看大圖沒有這兩個）
   const files = !ref && V.wall instanceof Wall;
+  // 提示詞用標籤模式顯示：一個標籤一格、有中文翻譯，點一下複製那個標籤；「複製全部」複製整段
+  const chips = !!V.ui?.vchips;
+  // 設定開了「複製提示詞時連 LoRA 一起複製」：補上這張圖的 <lora:…>（CoCo 存的提示詞裡沒有）
+  const promptCopy = () => genSettings()?.COPY_WITH_LORAS === true ? withLoras(d.prompt, imageLoras(d)) : d.prompt;
   return [
     h("div.vhd", {},
       h("h2.title", {id: "vName", text: d.filename, title: d.filename}),
@@ -267,9 +287,11 @@ function detailPanel(d, it) {
         (d.loras || []).map(l => copyable(h("span.rchip.l", {title: l.file}, h("b", {text: "LoRA"}), `${stem(l.file)} · ${fmtW(l.weight)}`),
                                           `<lora:${stem(l.file)}:${fmtW(l.weight)}>`)))),
     d.prompt ? h("section.vsec", {},
-      h("div.vsh", {}, h("h3", {"data-i18n": "view.prompt"})),
-      // 設定開了「複製提示詞時連 LoRA 一起複製」：補上這張圖的 <lora:…>（CoCo 存的提示詞裡沒有）
-      copyable(h("p.vtext", {text: d.prompt}), () => genSettings()?.COPY_WITH_LORAS === true ? withLoras(d.prompt, imageLoras(d)) : d.prompt),
+      h("div.vsh", {}, h("h3", {"data-i18n": "view.prompt"}), h("span.sp"),
+        chips ? copyable(h("span.mini.vcopy", {"data-i18n": "view.copyAll"}), promptCopy) : null,
+        h("button.mini.tog.vchipbtn", {type: "button", "aria-pressed": String(chips), "data-i18n": "view.chips",
+                                   "data-i18n-title": "view.chipsHint", on: {click: () => toggleChips(it)}})),
+      chips ? chipView(d.prompt, copyable) : copyable(h("p.vtext", {text: d.prompt}), promptCopy),
       added ? h("p.vadded", {},
         h("b", {"data-i18n": "view.presetAdded"}), " ",
         [extra.preset_quality && t("view.presetQ", {tags: extra.preset_quality}),
@@ -277,7 +299,7 @@ function detailPanel(d, it) {
       : h("p.dim", {"data-i18n": "view.noParams"}),
     d.negative ? h("details.vsec", {},
       h("summary", {}, h("h3", {"data-i18n": "view.negative"})),
-      copyable(h("p.vtext", {text: d.negative}), d.negative)) : null,
+      chips ? chipView(d.negative, copyable) : copyable(h("p.vtext", {text: d.negative}), d.negative)) : null,
     h("section.vsec.vgrid", {},
       kv("view.steps", d.steps), kv("CFG", d.cfg, true),
       kv("view.sampler", d.sampler), kv("view.schedule", d.scheduler),

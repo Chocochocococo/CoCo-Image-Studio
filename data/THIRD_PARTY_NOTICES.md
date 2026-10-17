@@ -52,11 +52,12 @@ CoCo 不附帶任何生成用的模型。使用者自己放進來的模型（Ani
 
 ## 四、安裝時才裝的套件（不隨 CoCo 附帶）
 
-`CoCo.bat` 第一次執行時從 PyPI 與 PyTorch 官方安裝下面這些套件到專案底下的 `venv\`，版本見 `requirements-lock.txt`。
+`CoCo.bat` 第一次執行時從 python.org 的官方套件取得 Python（放在 `python\`），再從 PyPI 與 PyTorch 官方安裝下面這些套件到專案底下的 `venv\`，版本見 `requirements-lock.txt`。
 它們不在 CoCo 的檔案裡，各自依照自己的授權。
 
 | 套件 | 授權 |
 |---|---|
+| Python 3.11.9（python.org 的官方套件，從 nuget.org 下載到 `python\`，核對 SHA512） | PSF-2.0 |
 | PyTorch、torchvision | BSD-3-Clause |
 | NVIDIA CUDA 執行階段（隨 PyTorch 安裝的 `nvidia-*` 套件） | NVIDIA 軟體授權 |
 | diffusers、transformers、accelerate、safetensors、peft、tokenizers、huggingface_hub、sentencepiece、comfy-kitchen、opencv-python | Apache-2.0 |

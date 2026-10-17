@@ -2,7 +2,7 @@
 """安裝方式：完整安裝或輕量安裝。
 
 - 完整：全部功能（生成、精修、訓練要 NVIDIA 顯示卡）。CUDA 版 PyTorch＋requirements-lock.txt，約 4 GB。
-- 輕量：圖庫、探索、比較、重組、輸出、資源庫。CPU 版 PyTorch＋requirements-lite.txt（版本照 requirements-lock.txt），
+- 輕量：圖庫、探索、比較、重組、輸出、資源庫，以及生成台的提示詞與標籤（只有生成要完整安裝）。CPU 版 PyTorch＋requirements-lite.txt（版本照 requirements-lock.txt），
   沒有 diffusers 這些生成引擎的套件。探索的特徵用 CPU 算（2026-10-15 實測 Ryzen 7 9700X：每秒 12.2 張，顯示卡 47 張；
   用文字找圖一次約 0.06 秒）。
 

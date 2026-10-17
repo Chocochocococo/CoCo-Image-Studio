@@ -31,8 +31,9 @@ PAGE_SIZE = 60               # 每次捲動載入幾張
 #  二、生成預設值
 # ══════════════════════════════════════════════════════════════
 
-# 模型：單一 .safetensors 檔、diffusers 資料夾，或 HF 名稱
-MODEL = str(ROOT / "models" / "waiIllustriousSDXL_v160.safetensors")
+# 模型：單一 .safetensors 檔、diffusers 資料夾，或 HF 名稱。預設空的：第一次打開時還沒選模型
+# （以前寫死一個模型檔名，新安裝的右上角就顯示一個電腦上根本沒有的模型）
+MODEL = ""
 
 # Anima 的 flow-match shift。官方值 3.0，影響很大，其他架構用不到。
 ANIMA_SHIFT = 3.0

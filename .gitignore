@@ -82,3 +82,8 @@ release_blocklist.txt
 
 # 安裝方式（CoCo.bat 第一次安裝時問：full／lite；server/install.py）
 install_mode.txt
+
+# CoCo 自己帶的 Python（CoCo.bat 第一次安裝時下載到 data\）
+/data/python/
+/data/python.nupkg
+/data/python.tmp/

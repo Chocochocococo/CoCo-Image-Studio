@@ -1,130 +1,132 @@
+**English** · [繁體中文](README.zh-TW.md)
+
 # CoCo Image Studio
 
-本地 AI 生圖與 LoRA 訓練工作台。
+A local workbench for generating images with AI and training LoRAs.
 
 ---
 
-## 系統需求
+## Requirements
 
-| 項目 | 需求 |
+| Item | Requirement |
 |---|---|
-| 作業系統 | **Windows**（`CoCo Image Studio.exe` 是唯一入口） |
-| 顯卡 | 完整安裝：**NVIDIA，RTX 20 系列以上**（生成、精修、訓練沒有 CPU 模式，AMD / Intel / Mac 不支援）。輕量安裝不需要顯卡 |
-| 驅動 | 完整安裝：**580 以上**（PyTorch 用的是 CUDA 13 版） |
-| Python | 不用另外安裝：第一次執行時自動下載官方的 Python 3.11.9，放在 `data` 資料夾裡 |
-| VRAM | 8GB 可跑（設定頁把 VRAM 策略改成「省 VRAM」，或打開「主模型用 fp8 存放」），12GB 以上較舒服 |
+| OS | **Windows** (`CoCo Image Studio.exe` is the only entry point) |
+| Graphics card | Full install: **NVIDIA, RTX 20 series or newer** (generate, refine and train have no CPU mode; AMD, Intel and Mac aren't supported). The light install needs no graphics card |
+| Driver | Full install: **580 or newer** (PyTorch is the CUDA 13 build) |
+| Python | Nothing to install: the first run downloads the official Python 3.11.9 into the `data` folder |
+| VRAM | 8 GB works (set VRAM to "Low" under "More" on the generate panel, or turn on "⚙ Settings → Generate → Store the main model in fp8"); 12 GB or more is comfortable |
 
-Anima 架構額外需要 **RTX 30 系列以上**——它用 bfloat16，Turing（20 系列）沒有
-原生支援會非常慢。SDXL 與 SD1.5 走 fp16，20 系列沒問題。
+The Anima architecture also needs **RTX 30 series or newer**: it runs in bfloat16, which Turing (20 series) doesn't
+support natively, so it would be very slow. SDXL and SD 1.5 run in fp16 and are fine on the 20 series.
 
-模型檔不隨專案附帶。`data\models\` 底下一種一格，名稱跟 ComfyUI 一樣（`checkpoints`、`diffusion_models`、`loras`、`vae`、`text_encoders`、`embeddings`、`controlnet`、`upscale_models`、`adetailer`、`rembg`…），照用途放進去就好；也可以在「設定 → 資源資料夾」指向其他工具（StabilityMatrix、ComfyUI、Forge）的模型資料夾，CoCo 自己的這些一樣會讀。舊版放在 `loras\`、`vae\` 這些地方的檔案，啟動時會自動搬進對應的分格。
-還沒有模型的話，可以在「設定 → 資源資料夾 → 下載模型」下載試用模型（Anima，約 5 GB）。
+Models aren't included. `data\models\` has one folder per kind, named the same as in ComfyUI (`checkpoints`, `diffusion_models`, `loras`, `vae`, `text_encoders`, `embeddings`, `controlnet`, `upscale_models`, `adetailer`, `rembg`…); put each file in the folder for its use. You can also point "Settings → Resource folders" at another tool's model folder (StabilityMatrix, ComfyUI, Forge); CoCo still reads its own folders too. Files that older versions kept in `loras\`, `vae\` and similar are moved into the matching folder on start.
+If you don't have a model yet, download the trial model (Anima, about 5 GB) from "Settings → Resource folders → Download models".
 
-### 會不會動到我現有的環境
+### Will it touch my existing setup?
 
-不會。PyTorch 與所有套件都裝在 `data\venv\`，版本由 `data\CoCo.bat` 與
-`requirements-lock.txt` 固定（torch 2.14.0+cu130 / diffusers 0.39.0；輕量安裝是 CPU 版 torch 加
-`requirements-lite.txt`，版本一樣照 `requirements-lock.txt`），
-跟系統上的 Python、A1111、ComfyUI 各自獨立。Python 也是 CoCo 自己的一份（`data\python\`，python.org 的官方套件、核對過 SHA512）。
+No. PyTorch and every package are installed in `data\venv\`, with versions pinned by `data\CoCo.bat` and
+`requirements-lock.txt` (torch 2.14.0+cu130 / diffusers 0.39.0; the light install uses the CPU build of torch plus
+`requirements-lite.txt`, still at the versions in `requirements-lock.txt`),
+separate from the Python, A1111 and ComfyUI already on your system. Python is CoCo's own copy too (`data\python\`, the official python.org package, SHA512 checked).
 
-下載的 diffusers 模型也存在 `data\hf_cache\`，不會堆到 C 槽使用者目錄。
-
----
-
-## 開始使用
-
-1. 雙擊 **`CoCo Image Studio.exe`**
-   > 第一次打開時 Windows 可能顯示「Windows 已保護您的電腦」：按「其他資訊」，再按「仍要執行」。
-   > 這是因為 CoCo 的啟動程式沒有付費的程式碼簽章，Windows 不認得它；它只負責執行 `data\CoCo.bat`
-   > （原始碼在 `data\tools\launcher.cs`）。之後再打開就不會再問。
-2. 第一次會詢問安裝方式，輸入 1 或 2：
-   - **1 完整安裝**（約 4 GB，需要 NVIDIA 顯卡）：全部功能。
-   - **2 輕量安裝**（約 1 GB）：圖庫、探索、比較、重組、輸出、資源庫，以及生成台的提示詞與標籤；不能生成圖片，精修與訓練只能看。探索用 CPU 計算。
-
-   偵測不到 NVIDIA 顯卡時建議輕量安裝。接著會問要不要在桌面和開始功能表建立 CoCo 的捷徑（Y／N）。
-   選好後自動建立環境、安裝套件，完成後直接開啟 Studio
-3. 之後執行會先更新圖庫索引，再開啟 Studio
-
-> 輕量安裝之後想用生成：到「⚙ 設定 → 其他」點擊「改為完整安裝」，關閉 CoCo 後重新開啟，會自動補裝其餘套件。
-
-> 第一次會自動下載官方的 Python 3.11.9（約 17 MB）放在 `data` 資料夾裡，不會影響電腦上已經裝好的 Python；沒有網路時才改用電腦上的 Python 3.11～3.13。
-> `CoCo Image Studio.exe` 也可以釘選到工作列。
-> 整個 CoCo 資料夾可以搬移或改名，不用重裝；搬了之後捷徑要重建（刪掉 `data\venv\.coco-shortcut` 再打開 CoCo 就會再問一次）。
+Downloaded diffusers models are stored in `data\hf_cache\`, so they don't pile up in your user folder on drive C.
 
 ---
 
-## 設定在介面上改
+## Getting started
 
-開啟 Studio 後切到「設定」分頁，所有東西都能在那裡調：
-掃描資料夾、模型、LoRA、提示詞、步數、CFG、取樣器、VRAM 策略……
+1. Double-click **`CoCo Image Studio.exe`**
+   > The first time, Windows may show "Windows protected your PC": choose "More info", then "Run anyway".
+   > CoCo's launcher has no paid code-signing certificate, so Windows doesn't recognise it. All it does is run `data\CoCo.bat`
+   > (source in `data\tools\launcher.cs`). It won't ask again.
+2. The first run asks which install you want; type 1 or 2:
+   - **1 Full** (about 4 GB, needs an NVIDIA graphics card): every feature.
+   - **2 Light** (about 1 GB): the gallery, explore, compare, recombine, output, the library, and the prompts and tags on the generate panel. It can't generate images, and refine and training are preview only. Explore runs on the CPU.
 
-改動存進 `data\settings.json`，**`data\config.py` 不會被改寫**。
-`config.py` 是預設值，想手動編輯仍然可以，兩者並存。
+   If no NVIDIA graphics card is found, Light is recommended. It then asks whether to add a CoCo shortcut to the desktop and the Start menu (Y/N).
+   After that it sets up its environment and installs the packages, then opens the Studio.
+3. From then on, it refreshes the gallery index first, then opens the Studio.
+
+> To generate after a light install: in "⚙ Settings → Other", press "Switch to full install", then close and reopen CoCo; it installs the rest automatically.
+
+> The first run downloads the official Python 3.11.9 (about 17 MB) into the `data` folder; any Python already on your computer isn't affected. Only without an internet connection does it use a Python 3.11–3.13 already on your computer.
+> You can also pin `CoCo Image Studio.exe` to the taskbar.
+> You can move or rename the whole CoCo folder without reinstalling. Recreate the shortcut afterwards: delete `data\venv\.coco-shortcut`, then open CoCo and it asks again.
 
 ---
 
-## 資料夾
+## Settings live in the interface
 
-要開 CoCo 就點 `CoCo Image Studio.exe`。其他東西（程式、Python、套件、你的圖、模型、設定）都在旁邊的 `data` 資料夾裡。
+Generation parameters (model, LoRA, prompt, steps, CFG, sampler, VRAM) are on the generate panel;
+everything else (gallery folders, resource folders…) is in "⚙ Settings" at the top right.
+
+Changes are saved to `data\settings.json`; **`data\config.py` is never rewritten**.
+`config.py` holds the defaults. You can still edit it by hand; the two are merged.
+
+---
+
+## Folders
+
+To open CoCo, use `CoCo Image Studio.exe`. Everything else (the program, Python, packages, your images, models, settings) is in the `data` folder next to it.
 
 ```
 CoCo-Image-Studio\
-  CoCo Image Studio.exe  ← 唯一入口（有 CoCo 的圖示，只負責執行 data\CoCo.bat）
-  data\             ← CoCo 的所有東西
-    CoCo.bat          ← 首次安裝，之後掃描並啟動（直接執行它也一樣）
-    outputs\          ← 生成結果
-    models\           ← 模型，一種一格（checkpoints、loras、vae…），自行放置
-    settings.json     ← 介面存的設定（自動產生）
-    config.py         ← 預設值
-    variables.txt     ← 變數（名稱 = 值）
-    wildcards\        ← 萬用字元清單檔
-    install_mode.txt  ← 安裝方式（full／lite，第一次安裝時產生）
-    python\           ← CoCo 自己的 Python（第一次安裝時下載）
-    venv\             ← 自動建立
+  CoCo Image Studio.exe  ← the only entry point (has the CoCo icon; it only runs data\CoCo.bat)
+  data\             ← everything CoCo has
+    CoCo.bat          ← installs on the first run, then scans and starts (running it directly works too)
+    outputs\          ← generated images
+    models\           ← models, one folder per kind (checkpoints, loras, vae…); add your own
+    settings.json     ← settings saved by the interface (created automatically)
+    config.py         ← defaults
+    variables.txt     ← variables (name = value)
+    wildcards\        ← wildcard list files
+    install_mode.txt  ← install type (full/lite, created on the first install)
+    python\           ← CoCo's own Python (downloaded on the first install)
+    venv\             ← created automatically
     requirements-lock.txt
-    requirements-lite.txt  ← 輕量安裝的套件（版本照 requirements-lock.txt）
-    core\             ← Studio 核心
-      conditioning.py   A1111 風格的提示詞編碼
-      template.py       模板展開引擎
-      gallery_index.py  圖庫索引器
-      settings.py       設定的讀寫
-    server\           ← 本機伺服器：HTTP 路由、圖庫、生成佇列、設定
-    web\              ← 介面（index.html、js\、css\、locales\）
+    requirements-lite.txt  ← packages for the light install (versions from requirements-lock.txt)
+    core\             ← the Studio core
+      conditioning.py   A1111-style prompt encoding
+      template.py       template expansion
+      gallery_index.py  gallery indexer
+      settings.py       settings read and write
+    server\           ← local server: HTTP routes, gallery, generation queue, settings
+    web\              ← the interface (index.html, js\, css\, locales\)
     tools\
-      studio.py         啟動入口（本體在 server\）
+      studio.py         startup entry (the rest is in server\)
 ```
 
-> 以前的版本把這些東西都放在 CoCo 資料夾的最外層。換成這一版之後第一次開啟，CoCo 會自動把它們搬進 `data`，
-> 設定、比較組、圖庫裡記的位置也會跟著改（原本的檔案備份在 `data\backups`）。
+> Earlier versions kept all of this at the top level of the CoCo folder. The first time you open this version, CoCo moves it into `data`
+> and updates the locations recorded in settings, compare sets and the gallery (the original files are backed up in `data\backups`).
 
 ---
 
-## 模板語法速查
+## Template syntax
 
-| 寫法 | 作用 |
+| Syntax | What it does |
 |---|---|
-| `[[A\|B\|C]]` | 笛卡兒展開，多個會相乘（立繪組） |
-| `{A\|B\|C}` | 隨機擇一 |
-| `{3::A\|B}` | 加權隨機（A 機率是 B 的三倍） |
-| `{A\|}` | 有機會什麼都不放 |
-| `__pose__` | 讀 `data\wildcards\pose.txt` 抽一行 |
-| `[[__pose__]]` | 對該檔每一行各展開一組 |
-| `{set:c=red\|blue}` `{get:c}` | 抽一次，之後重複用同一個值 |
-| `{2$$A\|B\|C}` | 抽 2 個不重複 |
-| `{1-3$$A\|B\|C}` | 抽 1～3 個 |
-| `{2$$ and $$A\|B\|C}` | 自訂分隔符 |
-| `${c={red\|blue}}` `${c}` | 同上，Dynamic Prompts 風格 |
-| `# 註解` | 到行尾都會被忽略 |
+| `[[A\|B\|C]]` | Cartesian expansion; several of them multiply (character sheets) |
+| `{A\|B\|C}` | Pick one at random |
+| `{3::A\|B}` | Weighted random (A is three times as likely as B) |
+| `{A\|}` | Sometimes picks nothing |
+| `__pose__` | A random line from `data\wildcards\pose.txt` |
+| `[[__pose__]]` | One set for every line in that file |
+| `{set:c=red\|blue}` `{get:c}` | Pick once, then reuse the same value |
+| `{2$$A\|B\|C}` | Pick 2 without repeats |
+| `{1-3$$A\|B\|C}` | Pick 1 to 3 |
+| `{2$$ and $$A\|B\|C}` | Custom separator |
+| `${c={red\|blue}}` `${c}` | Same as above, Dynamic Prompts style |
+| `# comment` | Ignored to the end of the line |
 
-### 變數與萬用字元的差別
+### Variables vs wildcards
 
-| | 是什麼 | 存在哪 | 怎麼用 |
+| | What it is | Where it's stored | How to use it |
 |---|---|---|---|
-| **變數** | 一個名稱對應一段固定內容 | `data\variables.txt` | `${my_oc}` |
-| **萬用字元** | 一個檔案裡很多行選項 | `data\wildcards\*.txt` | `__pose__` 隨機抽一行 |
+| **Variable** | A name for a fixed piece of text | `data\variables.txt` | `${my_oc}` |
+| **Wildcard** | A file with many lines of options | `data\wildcards\*.txt` | `__pose__` picks a random line |
 
-變數在工作台的「變數」分頁用表單新增與編輯，不用手動改檔案。
-萬用字元在「萬用字元」分頁編輯，一行一個選項。
+Add and edit variables with the form in the "Variables" tab of the generate panel's "Syntax" window; no need to edit the file by hand.
+Edit wildcards in the "Wildcards" tab of the same window, one option per line.
 
 ```
 # variables.txt
@@ -132,148 +134,141 @@ my_oc     = silver long hair, blue eyes, hair ribbon
 quality   = masterpiece, best quality, amazing quality, newest
 ```
 
-**提示詞欄位本身就是模板**，直接寫動態語法即可，左欄可以預覽展開結果。
+**The prompt field is itself a template**: write dynamic syntax straight into it, and "Syntax → Preview" shows the expanded prompts.
 
-### 固定 seed（測 LoRA 用）
+### Fixed seed (for testing LoRAs)
 
-在「模板」分頁把格式設為「Forge 批次」並填圖片種子，
-`data\prompts_out.txt` 會輸出成：
+Press "Fixed" next to the seed on the generate panel and the whole batch shares one seed, so the only differences come from the prompt.
+Add `[[<lora:A:0.8>|<lora:B:0.8>|]]` and you have a standard LoRA comparison.
 
-```
---prompt "..." --seed 12345
-```
-
-直接貼進 Forge 的 **Prompts from file or textbox**，所有變體共用同一個
-seed，差異就只來自提示詞。搭配 `[[<lora:A:0.8>|<lora:B:0.8>|]]`
-就是標準的 LoRA 對照測試。
-
-`TPL_LOCK_RANDOM = True` 時，同一輪的所有組合共用隨機值——
-換姿勢換表情但角色不變，這就是角色立繪組。
+With "Lock random picks" in "Syntax → Preview" turned on (the default), every combination in a batch shares the same random picks:
+the pose and expression change but the character stays the same, which is what a character sheet needs.
 
 ---
 
-## 模型格式
+## Model formats
 
-三種都支援：
+All three are supported:
 
-| 格式 | 長相 | 怎麼用 |
+| Format | What it looks like | How to use it |
 |---|---|---|
-| **單檔** | `model.safetensors` | 放進模型資料夾，掃描後點卡片 |
-| **diffusers 資料夾** | 含 `model_index.json` 的資料夾 | 同上，卡片會標「資料夾」 |
-| **拆分零件** | transformer / vae / text_encoder 各一份 | 主模型照選，再到「VAE」與「文字編碼器」分頁各點一張卡片 |
+| **Single file** | `model.safetensors` | Put it in a model folder, then click its card in the library's "Models" tab |
+| **diffusers folder** | A folder with `model_index.json` | Same as above |
+| **Split parts** | Separate transformer / vae / text_encoder files | Pick the main model as usual, then click a card in the "VAE" and "Encoders" tabs (if you don't, CoCo finds matching ones) |
 
-零件覆寫就是 VAE 與文字編碼器兩個分頁。兩邊都有「模型自帶」那張卡片，
-選它等於不覆寫；選別的就覆寫——可以讓多個模型共用同一份 VAE，省下數 GB。
+The VAE and Encoders tabs are how you override parts. Both have a "Built into the model" card;
+picking it means no override, and picking any other card overrides that part. That lets several models share one VAE and saves several GB.
 
-### diffusers 模型要自己下載嗎
+### Do I have to download diffusers models myself?
 
-把整個資料夾放進模型資料夾即可，不必連網，掃描後卡片會標「資料夾」。
+Put the whole folder into a model folder; no internet connection is needed.
 
-自動下載的模型會存進 `data\hf_cache\`，不會跑到 C 槽的使用者目錄。
-要清掉直接刪那個資料夾就好。
+Models that are downloaded automatically are stored in `data\hf_cache\`, not in your user folder on drive C.
+To clear them, just delete that folder.
 
 ---
 
-## 常見問題
+## Troubleshooting
 
-**這版 PyTorch 不支援你的顯卡（sm_120）**
-RTX 50 系列需要 CUDA 12.8 以上的版本。刪除 `data\venv\.coco-ready` 後重新打開 CoCo，
-它會檢查已安裝的版本，對不上就重新安裝驗證過的 cu130 版本。
-（`CoCo.bat` 更新了鎖定的版本時也會自動做這件事，不必手動刪。）
+**This PyTorch build doesn't support your GPU (sm_120)**
+The RTX 50 series needs a build for CUDA 12.8 or newer. Delete `data\venv\.coco-ready` and reopen CoCo;
+it checks the installed versions and, if they don't match, reinstalls the tested cu130 build.
+(`CoCo.bat` also does this by itself when it updates the pinned versions, so you don't have to delete anything then.)
 
-**啟動時說「找不到你的顯示卡」（英文：cannot see your GPU）**
-PyTorch 的版本是對的，但它看不到顯卡，所以**重裝沒有用**——問題在驅動或硬體。
-先更新 NVIDIA 驅動（CUDA 13 需要 580 以上），再確認裝置管理員裡顯卡正常。
-這個狀態下圖庫仍然可用，只有生成會失敗。
+**At startup it says it "cannot see your GPU"**
+The PyTorch version is right but it can't see the graphics card, so **reinstalling won't help**: the problem is the driver or the hardware.
+Update the NVIDIA driver first (CUDA 13 needs 580 or newer), then check that the card looks normal in Device Manager.
+In this state the gallery still works; only generation fails.
 
-**LoRA 載入失敗**
-若是 LyCORIS（LoHa / LoKr），diffusers 目前不支援。一般 kohya LoRA 若
-diffusers 載入層出錯，程式會自動改用手動融合，詳細原因會顯示在生成紀錄。
+**A LoRA doesn't apply**
+CoCo merges LoRAs into the model itself and supports regular LoRAs; LyCORIS LoHa and LoKr aren't supported yet.
+The generation log shows how many modules each LoRA was merged into. When it says a LoRA "matches no modules", the format usually isn't supported,
+or the LoRA doesn't fit the main model's architecture (for example an SDXL LoRA on Anima).
 
-**瀏覽方式**
+**Gallery layouts**
 
-標題列可切換三種排版：
+"Layout → Arrangement" in the wall's title bar switches between three layouts:
 
-| 選項 | 英文名 | 順序 | 空隙 |
+| Option | Also known as | Order | Gaps |
 |---|---|---|---|
-| 響應式・齊行（預設） | justified layout | 正確 | 每列填滿 |
-| 瀑布流・緊密 | masonry, shortest column | 會跳 | 密 |
-| 瀑布流・依序 | masonry, round-robin | 正確 | 底部參差 |
+| Justified (default) | justified layout | kept | every row filled |
+| Masonry · packed | masonry, shortest column | can jump | tight |
+| Masonry · in order | masonry, round-robin | kept | uneven bottom |
 
-齊行是把連續的圖組成一列、整列縮放到填滿寬度；瀑布流是垂直堆疊成數欄。
-兩者是不同的排版方式，不是同一種的變體。
+Justified groups consecutive images into a row and scales the row to fill the width; masonry stacks images into columns.
+They are different layout methods, not variants of one.
 
-**圖庫顯示「無參數」**
-那些圖的中繼資料被剝掉了（多半是外部下載或編輯過），不是錯誤。
+**The image viewer says "No generation settings."**
+Those images had their metadata stripped (usually downloaded from elsewhere or edited). It isn't an error.
 
-**啟動時出現 `is not recognized as an internal command`**
-請確認專案完整解壓縮：`CoCo Image Studio.exe` 旁邊要有 `data` 資料夾，裡面有 `CoCo.bat`、`requirements-lock.txt`、`requirements-lite.txt`、`core\`、
-`tools\studio.py`、`server\`、`web\`。
+**At startup you see `is not recognized as an internal command`**
+Make sure the whole archive was unzipped: `CoCo Image Studio.exe` should sit next to a `data` folder that holds `CoCo.bat`, `requirements-lock.txt`, `requirements-lite.txt`, `core\`,
+`tools\studio.py`, `server\` and `web\`.
 
-**V-Pred 模型（NoobAI V-Pred 這類）**
-直接選就好，CoCo 會從模型檔認出來、自動換成對的算法。官方建議取樣器用 Euler、CFG 4～5、28～35 步；
-選了不適用的取樣器（LMS、Heun、DPM2、DPM++ SDE、DEIS、SA-Solver）會自動改用 Euler，生成紀錄會說明。
+**V-Pred models (such as NoobAI V-Pred)**
+Just pick them: CoCo recognises them from the model file and switches to the right method. The official advice is the Euler sampler, CFG 4–5 and 28–35 steps.
+If you pick a sampler that doesn't fit (LMS, Heun, DPM2, DPM++ SDE, DEIS, SA-Solver), CoCo switches to Euler and says so in the generation log.
 
-**VAE 怎麼選**
+**Which VAE to use**
 
-「模型 / LoRA / VAE」的 VAE 分頁有三種選擇：
+The library's VAE tab (click the "VAE" slot on the generate panel to open it) has three choices:
 
-| 選項 | 說明 |
+| Option | What it means |
 |---|---|
-| **sdxl-vae-fp16-fix**（預設） | SDXL 原版 VAE 在 fp16 會溢位產生黑圖，diffusers 的對策是解碼時升到 fp32，那一瞬間 VRAM 會暴衝。換成修正版就全程 fp16，不暴衝 |
-| 模型自帶 | 畫面完全依照模型，但 SDXL 解碼時 VRAM 會暴衝 |
-| 自訂 | 掃描 `data\models\vae\` 與你設定的 VAE 資料夾裡的檔案 |
+| **sdxl-vae-fp16-fix** (default) | The original SDXL VAE overflows in fp16 and produces black images. diffusers works around this by decoding in fp32, and VRAM spikes at that moment. The fixed version stays in fp16 the whole way, with no spike |
+| Built into the model | Exactly what the model gives, but VRAM spikes while SDXL decodes |
+| Custom | Files in `data\models\vae\` and the VAE folders you set |
 
-「SDXL 分階段解碼」預設為自動；大圖會先卸載 UNet 再執行 VAE decode。
+"Staged decode" under "More" on the generate panel is set to Auto by default; for large images it unloads the UNet before the VAE decode.
 
-**VRAM 比 Forge 高**
-在設定頁把 VRAM 策略改成「平衡」或「省 VRAM」。SDXL 另請維持分階段解碼
-為「自動」；Anima 的平衡與省 VRAM 模式會在各階段卸載不用的元件。
-還不夠的話，打開「設定 → 生成 → 主模型用 fp8 存放」：主模型只佔一半的顯示卡記憶體，
-速度慢一點點，生成的圖會跟關掉時有一點不同。
-
----
-
-## 回報問題
-
-遇到問題或有建議，歡迎在 GitHub 的 Issues 回報。
-
-這個專案**不接受程式碼貢獻（Pull Request）**：作者沒辦法自己審查別人寫的程式碼，無法確保裡面沒有惡意程式。
+**VRAM use is higher than in Forge**
+Set VRAM to "Balanced" or "Low" under "More" on the generate panel. For SDXL, also keep "Staged decode"
+on "Auto"; in Balanced and Low, Anima unloads the parts it isn't using at each stage.
+If that's still not enough, turn on "⚙ Settings → Generate → Store the main model in fp8": the main model takes half the graphics memory,
+it runs a little slower, and images differ slightly from when it's off.
 
 ---
 
-## 贊助
+## Reporting problems
 
-CoCo 免費、沒有廣告。如果它幫上了你的忙，歡迎贊助支持作者繼續開發。
+If you run into a problem or have a suggestion, please open an issue on GitHub.
 
-| 平台 | 適合 | 連結 |
+This project **doesn't accept code contributions (pull requests)**: the author can't review other people's code themselves, so there's no way to make sure it contains nothing malicious.
+
+---
+
+## Sponsor
+
+CoCo is free and has no ads. If it has helped you, you're welcome to sponsor the author's continued work on it.
+
+| Platform | Best for | Link |
 |---|---|---|
-| 綠界 | 台灣：信用卡、ATM、超商等 | [前往贊助](https://p.ecpay.com.tw/D6622EF) |
-| Ko-fi | 海外：信用卡、PayPal | [前往贊助](https://ko-fi.com/chocochocococo) |
+| ECPay | Taiwan: credit card, ATM, convenience stores and more | [Sponsor](https://p.ecpay.com.tw/D6622EF) |
+| Ko-fi | Outside Taiwan: credit card, PayPal | [Sponsor](https://ko-fi.com/chocochocococo) |
 
-CoCo 裡也找得到：⚙ 設定 → 關於。
+You can also find these in CoCo: ⚙ Settings → About.
 
 ---
 
-## 授權
+## License
 
-CoCo Image Studio 採用 [PolyForm Noncommercial License 1.0.0](LICENSE)，加上一段額外許可：
-**程式本身禁止商業用途，用它生成的圖不限。**
-下面是簡單的說明，實際以 [LICENSE](LICENSE) 的英文條文為準。
+CoCo Image Studio is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE), plus an additional permission:
+**the program itself may not be used commercially; the images you generate with it may be used for anything.**
+Below is a short summary; the [LICENSE](LICENSE) text is what counts.
 
-**可以，不用問作者：**
+**Allowed, no need to ask the author:**
 
-- 用 CoCo 生成的圖，做什麼都可以：接案、販售、授權、商業作品都行
-- 個人的興趣、學習、研究、測試、私人娛樂
-- 學校、慈善團體、公益組織、政府機關使用
-- 修改程式，或把原版、改過的版本分享給別人：要一起附上 LICENSE 的條文，以及第一行的著作權聲明（`Required Notice:` 那一行）
+- Use images generated with CoCo for anything: commissions, sales, licensing and commercial work are all fine
+- Personal hobbies, learning, research, testing and private entertainment
+- Use by schools, charities, public-interest organisations and government bodies
+- Modifying the program, or sharing the original or a modified version: include the LICENSE text and the copyright notice on its first line (the `Required Notice:` line)
 
-**不可以，要先取得作者同意：**
+**Not allowed without the author's permission:**
 
-- 販售 CoCo 或改過的版本、分享時收費
-- 把 CoCo 放進收費的產品，或拿它架設收費的服務
+- Selling CoCo or a modified version, or charging for copies
+- Putting CoCo into a paid product, or using it to run a paid service
 
-**其他：**
+**Also:**
 
-- 專案裡附帶的第三方檔案與程式（字型、tokenizer、從 diffusers 抄來的程式等）各自保留原本的授權，見 [THIRD_PARTY_NOTICES.md](data/THIRD_PARTY_NOTICES.md)。
-- CoCo 不附帶生成用的模型。你自己放進來的模型，以及用它們生成的圖，還要受各個模型自己的授權規範。
+- Third-party files and code bundled with the project (fonts, tokenizers, code copied from diffusers and so on) keep their own licenses; see [THIRD_PARTY_NOTICES.md](data/THIRD_PARTY_NOTICES.md) (in Traditional Chinese).
+- CoCo doesn't include any models for generation. Models you add yourself, and the images you generate with them, are also subject to each model's own license.

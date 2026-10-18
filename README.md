@@ -4,6 +4,8 @@
 
 A local workbench for generating images with AI and training LoRAs.
 
+**[Download the latest version](https://github.com/Chocochocococo/CoCo-Image-Studio/releases/latest)** · [Website and manual](https://studio.cocos-homes.com/en/)
+
 ---
 
 ## Requirements
@@ -35,17 +37,19 @@ Downloaded diffusers models are stored in `data\hf_cache\`, so they don't pile u
 
 ## Getting started
 
-1. Double-click **`CoCo Image Studio.exe`**
+1. Download `CoCo-Image-Studio.zip` from the [latest release](https://github.com/Chocochocococo/CoCo-Image-Studio/releases/latest) and extract it wherever you like, for example `D:\CoCo-Image-Studio`.
+   Keep the path short, and don't put it in a synced folder such as OneDrive or Dropbox.
+2. Double-click **`CoCo Image Studio.exe`**
    > The first time, Windows may show "Windows protected your PC": choose "More info", then "Run anyway".
    > CoCo's launcher has no paid code-signing certificate, so Windows doesn't recognise it. All it does is run `data\CoCo.bat`
    > (source in `data\tools\launcher.cs`). It won't ask again.
-2. The first run asks which install you want; type 1 or 2:
+3. The first run asks which install you want; type 1 or 2:
    - **1 Full** (about 4 GB, needs an NVIDIA graphics card): every feature.
    - **2 Light** (about 1 GB): the gallery, explore, compare, recombine, output, the library, and the prompts and tags on the generate panel. It can't generate images, and refine and training are preview only. Explore runs on the CPU.
 
    If no NVIDIA graphics card is found, Light is recommended. It then asks whether to add a CoCo shortcut to the desktop and the Start menu (Y/N).
    After that it sets up its environment and installs the packages, then opens the Studio.
-3. From then on, it refreshes the gallery index first, then opens the Studio.
+4. From then on, it refreshes the gallery index first, then opens the Studio.
 
 > To generate after a light install: in "⚙ Settings → Other", press "Switch to full install", then close and reopen CoCo; it installs the rest automatically.
 

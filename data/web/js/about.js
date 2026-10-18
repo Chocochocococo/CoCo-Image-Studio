@@ -1,12 +1,12 @@
 // 關於（⚙ 設定 → 關於）：程式的簡短介紹、官網、GitHub、贊助。
-// 對外連結集中在這裡（README 與 .github/FUNDING.yml 的贊助連結要跟這裡一樣，tests/test_about.py 檢查）。
-// 空字串＝還沒有，不顯示：官網與 GitHub 等公開版發布後再填（2026-10-16）
+// 對外連結集中在這裡（README 與 .github/FUNDING.yml 的連結要跟這裡一樣，tests/test_about.py 檢查）。
+// 空字串＝還沒有，不顯示
 
 import {h} from "./dom.js";
 
 export const LINKS = {
-  site: "",
-  github: "",
+  site: "https://studio.cocos-homes.com",                     // 官網與使用手冊（2026-10-18 起）
+  github: "https://github.com/Chocochocococo/CoCo-Image-Studio",  // 公開版；下載在 Releases
   ecpay: "https://p.ecpay.com.tw/D6622EF",       // 綠界：台灣（信用卡、ATM、超商）
   kofi: "https://ko-fi.com/chocochocococo",       // Ko-fi：海外（信用卡、PayPal）
 };

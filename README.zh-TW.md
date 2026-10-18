@@ -4,6 +4,8 @@
 
 本地 AI 生圖與 LoRA 訓練工作台。
 
+**[下載最新版](https://github.com/Chocochocococo/CoCo-Image-Studio/releases/latest)** · [官網與使用手冊](https://studio.cocos-homes.com/)
+
 ---
 
 ## 系統需求
@@ -35,17 +37,19 @@ Anima 架構額外需要 **RTX 30 系列以上**——它用 bfloat16，Turing�
 
 ## 開始使用
 
-1. 雙擊 **`CoCo Image Studio.exe`**
+1. 從[最新版的下載頁](https://github.com/Chocochocococo/CoCo-Image-Studio/releases/latest)下載 `CoCo-Image-Studio.zip`，解壓縮到想放的地方，例如 `D:\CoCo-Image-Studio`。
+   路徑不要太深，也不要放在 OneDrive、Dropbox 這類同步資料夾裡。
+2. 雙擊 **`CoCo Image Studio.exe`**
    > 第一次打開時 Windows 可能顯示「Windows 已保護您的電腦」：按「其他資訊」，再按「仍要執行」。
    > 這是因為 CoCo 的啟動程式沒有付費的程式碼簽章，Windows 不認得它；它只負責執行 `data\CoCo.bat`
    > （原始碼在 `data\tools\launcher.cs`）。之後再打開就不會再問。
-2. 第一次會詢問安裝方式，輸入 1 或 2：
+3. 第一次會詢問安裝方式，輸入 1 或 2：
    - **1 完整安裝**（約 4 GB，需要 NVIDIA 顯卡）：全部功能。
    - **2 輕量安裝**（約 1 GB）：圖庫、探索、比較、重組、輸出、資源庫，以及生成台的提示詞與標籤；不能生成圖片，精修與訓練只能看。探索用 CPU 計算。
 
    偵測不到 NVIDIA 顯卡時建議輕量安裝。接著會問要不要在桌面和開始功能表建立 CoCo 的捷徑（Y／N）。
    選好後自動建立環境、安裝套件，完成後直接開啟 Studio
-3. 之後執行會先更新圖庫索引，再開啟 Studio
+4. 之後執行會先更新圖庫索引，再開啟 Studio
 
 > 輕量安裝之後想用生成：到「⚙ 設定 → 其他」點擊「改為完整安裝」，關閉 CoCo 後重新開啟，會自動補裝其餘套件。
 

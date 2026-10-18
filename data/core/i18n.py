@@ -62,8 +62,11 @@ def _dict(lang):
 
 
 def tr(key, **params):
-    """照目前語言取出 key 的文字，{名稱} 換成 params；跟前端 t() 的規則一樣"""
-    s = _dict(_lang).get(key)
+    """照目前語言取出 key 的文字，{名稱} 換成 params；跟前端 t() 的規則一樣（n 是 1 時改用「鍵.one」）"""
+    d = _dict(_lang)
+    if str(params.get("n")) == "1" and f"{key}.one" in d:
+        key += ".one"
+    s = d.get(key)
     if s is None:
         s = _dict(SOURCE).get(key, key)
     if not params:

@@ -4,6 +4,9 @@
 // 技術名詞（LoRA、VAE、CFG、Recipe、取樣器名稱、token）兩種語言都保留英文。
 // 用法：t("nav.generate")、t("wall.count", {n: 12})；
 // HTML 裡用 data-i18n="鍵" / data-i18n-title / data-i18n-placeholder。
+//
+// 單複數：n 是 1、而目前語言的語系檔有「鍵.one」就改用它（英文 "1 winner"／"3 winners"）。
+// 中文不分單複數，zh-TW.json 的 .one 跟原鍵同字（兩份語系檔的鍵要一樣）；後端 core/i18n.py 的 tr() 同規則。
 
 export const LANGS = [["zh-TW", "繁體中文"], ["en", "English"]];
 const SOURCE = "zh-TW";
@@ -34,6 +37,8 @@ export async function initI18n(pref) {
 export function lang() { return current; }
 
 export function t(key, params) {
+  // 只看目前語言的 .one：英文缺 .one 時用英文的複數，不要退回成繁中的字
+  if (params && String(params.n) === "1" && dict[`${key}.one`] != null) key = `${key}.one`;
   const s = dict[key] ?? fallback[key] ?? key;
   if (!params) return s;
   return s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? String(params[k]) : m));

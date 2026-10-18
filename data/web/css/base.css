@@ -955,6 +955,7 @@ details.vsec summary { cursor: pointer; }
 .ssec .hint { margin: 0; font-size: 12.5px; color: var(--dm); }
 /* ⚙ 設定 → 關於（about.js）：連結是 a.pill，贊助一個平台一張卡 */
 .ssec .aboutp { margin: 0; line-height: 1.6; }
+.aboutver { margin-left: 10px; font: 500 13px var(--mono); color: var(--dm); }
 .aboutlinks { display: flex; flex-wrap: wrap; gap: 8px; }
 a.pill { display: inline-block; text-decoration: none; }
 .aboutsp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

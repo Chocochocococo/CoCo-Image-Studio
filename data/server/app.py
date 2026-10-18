@@ -8,7 +8,7 @@ import webbrowser
 from .handler import Handler, Server
 from .library import run_index
 from .resources import model_arch
-from .state import APP_PORT, DB_PATH, SET, db, load_ui
+from .state import APP_PORT, APP_VERSION, DB_PATH, SET, db, load_ui
 from .userdata import migrate_vars
 from .worker_client import WORKER
 
@@ -29,12 +29,17 @@ def startup_lang():
     i18n.set_lang(pref)
 
 
+def title_line():
+    """主控台開頭的標題，後面接版本號：回報問題時貼這段就知道是哪一版"""
+    return "  " + tr("srv.app.title") + (f"  v{APP_VERSION}" if APP_VERSION else "")
+
+
 def main():
     import certs
     certs.use_system_certs()     # 防毒軟體掃 HTTPS 時 huggingface_hub 才下載得到（core/certs.py）
     startup_lang()
     print("=" * 52)
-    print("  " + tr("srv.app.title"))
+    print(title_line())
     print("=" * 52)
     # CoCo 自己的模型資料夾：建好分格、把舊位置的檔案搬進來（先做，後面的掃描才看得到）
     try:

@@ -38,6 +38,18 @@ def _version():
 
 
 VERSION = _version()
+
+
+def _app_version():
+    """發布的版本號（data\\VERSION，例如 0.1）：⚙ 設定 → 關於、主控台開頭顯示；發布工具 tools/release.py 也讀這個檔。
+    公開版沒有 .git，上面的 commit 碼是空的，使用者回報問題時看這個。讀不到就空字串（不顯示）"""
+    try:
+        return (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+APP_VERSION = _app_version()
 import template as TPL
 
 HERE = ROOT

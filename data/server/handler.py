@@ -22,7 +22,7 @@ from .resources import (KINDS, ROOT_KINDS, browse, detectors, model_arch, res_co
                         resolve_lora)
 from .security import _is_loopback_netloc, _is_loopback_origin
 from .settings_api import arch_switch, settings_out, update_settings
-from .state import (API_TOKEN, C, DB_WRITE_LOCK, EDIT_REQUEST_BODY, INDEX_STATE, MAX_REQUEST_BODY,
+from .state import (API_TOKEN, APP_VERSION, C, DB_WRITE_LOCK, EDIT_REQUEST_BODY, INDEX_STATE, MAX_REQUEST_BODY,
                     PAGE_SIZE, ROOT, SET, SETTINGS_APPLY_LOCK, TPL, VERSION, db, load_ui,
                     save_ui, update_ui)
 from .userdata import vars_apply, vars_read, wc_list, wc_read, wc_write
@@ -179,9 +179,11 @@ class Handler(BaseHTTPRequestHandler):
             f, mime = hit
             b = f.read_bytes()
             if f.suffix == ".html":
-                # __COCO_API_TOKEN__ 換成這次啟動的 token
+                # __COCO_API_TOKEN__ 換成這次啟動的 token；__COCO_APP_VERSION__ 換成版本號（關於頁顯示）
                 b = b.replace(b"__COCO_API_TOKEN__",
                               json.dumps(API_TOKEN).encode("utf-8"))
+                b = b.replace(b"__COCO_APP_VERSION__",
+                              json.dumps(APP_VERSION).encode("utf-8"))
             # 字型不會變（檔名含版本就換檔名），可以長快取；14 MB 的楷體
             # 每次都重抓太浪費。HTML / JS / CSS 開發中常改，一律不快取。
             self._bytes(b, mime, cache=f.suffix in (".ttf", ".woff2"))

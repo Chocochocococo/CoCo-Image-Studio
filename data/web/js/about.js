@@ -1,5 +1,5 @@
 // 關於（⚙ 設定 → 關於）：程式名稱與版本號、簡短介紹、官網、GitHub、贊助。
-// 版本號在 data\VERSION，伺服器送首頁時填進 window.COCO_APP_VERSION（server/handler.py）；沒有就不顯示。
+// 版本號在 data\VERSION，伺服器送首頁時填進 <meta name="coco-version">（server/handler.py）；沒有就不顯示。
 // 對外連結集中在這裡（README 與 .github/FUNDING.yml 的連結要跟這裡一樣，tests/test_about.py 檢查）。
 // 空字串＝還沒有，不顯示
 
@@ -19,7 +19,7 @@ const out = (url, cls, key) => h(`a.${cls}`, {href: url, target: "_blank", rel: 
 
 export function aboutBody() {
   const links = [["site", "about.site"], ["github", "about.github"]].filter(([k]) => LINKS[k]);
-  const ver = globalThis.COCO_APP_VERSION;          // 就是 window.COCO_APP_VERSION（測試在 node 跑，沒有 window）
+  const ver = globalThis.document?.querySelector?.('meta[name="coco-version"]')?.content || "";   // 測試在 node 跑，document 是假的
   return [
     h("section.ssec", {},
       h("h3", {}, "CoCo Image Studio", ver ? h("span.aboutver", {text: `v${ver}`}) : null),

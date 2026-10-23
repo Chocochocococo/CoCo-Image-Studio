@@ -92,6 +92,13 @@ def clean_sources(v):
     return as_refsources(v)
 
 
+def web_url(value):
+    """Eagle 項目記的來源網址 → 只留 http／https 的，其他（javascript:、data:、file:…）當沒有。
+    介面把它直接當連結（explore.js、viewer.js 的「來源」）；Eagle 的本機 API 讓任何網頁都能新增項目並指定這個欄位，不能信"""
+    s = str(value or "").strip()
+    return s if s.lower().startswith(("http://", "https://")) else ""
+
+
 def eagle_info(path):
     """Eagle 檔案庫的資料夾樹：{name, path, folders: [{id, name, children}]} 或 {error}"""
     p = Path(str(path or "").strip().strip('"'))
@@ -158,7 +165,7 @@ def _eagle_items(src, known):
                 f = d / f"{name}{ext}"
                 th = d / f"{name}_thumbnail.png"
                 it = {"key": f"eagle:{eid}", "path": str(f), "thumb": str(th) if th.is_file() else "",
-                      "name": name, "tags": [str(t) for t in m.get("tags") or []][:50], "url": str(m.get("url") or ""),
+                      "name": name, "tags": [str(t) for t in m.get("tags") or []][:50], "url": web_url(m.get("url")),
                       "eagle": eid, "folders": [str(x) for x in m.get("folders") or []],
                       "w": int(m.get("width") or 0), "h": int(m.get("height") or 0), "mtime": float(stamp or m.get("mtime") or 0)}
             known[eid] = (stamp, it)
@@ -423,7 +430,7 @@ def ref_detail(rid):
             "clip_skip": _num(meta.get("clip_skip"), int),
             "loras": loras if isinstance(loras, list) else [], "extra": meta.get("extra") or {},
             "ref": {"rid": r["id"], "key": r["key"], "name": r["name"], "tags": json.loads(r["tags"] or "[]"),
-                    "url": r["url"], "eagle": r["eagle"], "src": r["src"]}}
+                    "url": web_url(r["url"]), "eagle": r["eagle"], "src": r["src"]}}      # 以前索引進去的也過濾
 
 
 def import_ref(rid, gcon, out_dir, lock):
@@ -473,5 +480,6 @@ def ref_rows(con, keys):
         for r in con.execute(q, part):
             d = dict(r)
             d["tags"] = json.loads(d["tags"] or "[]")
+            d["url"] = web_url(d.get("url"))
             out[d["key"]] = d
     return out

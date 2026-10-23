@@ -286,6 +286,14 @@ export class Wall {
     this.onCount?.(this.total);
   }
 
+  // 牆底下那行字。不帶參數的（尚無圖片、載入中）掛 data-i18n，換語言時 render() 的 translate() 會跟著換；
+  // 直接寫 textContent 的會停在原本的語言，要重新整理才換。清掉時鍵也要拿掉，不然重畫時「尚無圖片」又被補回有圖的牆上
+  setStatus(key, params) {
+    if (key && !params) this.status.dataset.i18n = key;
+    else this.status.removeAttribute("data-i18n");
+    this.status.textContent = key ? t(key, params) : "";
+  }
+
   async reset() {
     this.gen++;
     this.scrollY = 0;
@@ -302,7 +310,7 @@ export class Wall {
     if (this.loading || (this.offset && this.offset >= this.total)) return;
     this.loading = true;
     const gen = this.gen, q = this.query();
-    this.status.textContent = t("wall.loading");
+    this.setStatus("wall.loading");
     try {
       const d = await get(`/api/list?offset=${this.offset}${q ? `&${q}` : ""}`);
       if (gen !== this.gen) return;           // 篩選已經換了，這批丟掉
@@ -311,9 +319,9 @@ export class Wall {
       this.total = d.total;
       this.offset += d.items.length;
       this.append(d.items);
-      this.status.textContent = this.total ? "" : t(typeof this.emptyKey === "function" ? this.emptyKey() : this.emptyKey);
+      this.setStatus(this.total ? "" : typeof this.emptyKey === "function" ? this.emptyKey() : this.emptyKey);
     } catch (e) {
-      if (gen === this.gen) this.status.textContent = t("wall.error", {msg: e.message || e});
+      if (gen === this.gen) this.setStatus("wall.error", {msg: e.message || e});
     } finally {
       if (gen === this.gen) { this.loading = false; this.drawCount(); }
     }
@@ -333,7 +341,7 @@ export class Wall {
         this.items.unshift(...fresh);
         this.offset += fresh.length;
         this.layout();                         // 新圖要排在最前面，只能整面重排
-        this.status.textContent = "";
+        this.setStatus("");
       }
       this.drawCount();
     } catch { /* 下一張出來時會再試 */ }
@@ -477,7 +485,9 @@ function hoverZoom(wall) {
     if (!it || !wall.ui[wall.zoomKey] || document.body.classList.contains("viewing")) return;
     clearTimeout(zoomTimer);
     const at = {clientX: e.clientX, clientY: e.clientY};
-    zoomTimer = setTimeout(() => showZoom(it, at), 220);
+    // 等的這 0.22 秒裡牆可能已經不在畫面上（看大圖按「找相似」：看大圖一關，游標底下換成牆上的縮圖，接著就切到探索）：
+    // 不在了就不浮出來，不然再也等不到 mouseout，預覽會一直卡在下一個畫面上
+    zoomTimer = setTimeout(() => { if (wall.box.isConnected) showZoom(it, at); }, 220);
   });
   wall.box.addEventListener("mousemove", e => {
     if (zoomEl && !zoomEl.hidden) placeZoom(e);
@@ -490,3 +500,4 @@ function hoverZoom(wall) {
 }
 addEventListener("wheel", hideZoom, {passive: true});
 addEventListener("blur", hideZoom);
+addEventListener("hashchange", hideZoom);       // 換畫面：已經浮出來的也收起來（原本的牆被換掉，mouseout 不會來）

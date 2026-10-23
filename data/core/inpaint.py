@@ -89,7 +89,12 @@ def crop_inputs(full, soft, p):
 def fill(img, mask):
     """遮罩裡換成周圍顏色糊開的樣子（跟 A1111 masking.fill 同一個做法）：
     遮罩外的像素由大到小一層層模糊疊上去，最後一層半徑 0 是原圖本身，所以遮罩外不變。
-    用 premultiplied 的 RGBa 模糊，透明的遮罩區才不會把黑色混進來"""
+    用 premultiplied 的 RGBa 模糊，透明的遮罩區才不會把黑色混進來。
+
+    已知的問題：遮罩中間大多是半徑 256、64 那兩層，會混進遠處的顏色——灰色背景下一條平的草地，移掉上面的花，
+    補的地方偏 (+11, −1, +11)，生成後看得出亮塊。2026-10-21 試過只用遮罩附近顏色的 push-pull（commit cb6d552），
+    平坦底色好了，但會把貼著的深色前景帶進來，Anima 留下深色的平塊；擴圖則補得太平、畫不出東西。每塊遮罩只用附近 32px
+    的折衷也試過：亮塊主要是模型重畫時自己畫淺，換抹平法只少一點灰色。使用者決定維持這個（數字與對照見 DEVLOG 2026-10-21）"""
     base = Image.new("RGBa", img.size)
     base.paste(img.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(mask.convert("L")))
     out = Image.new("RGBA", img.size)

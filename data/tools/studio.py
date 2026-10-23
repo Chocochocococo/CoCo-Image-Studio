@@ -14,10 +14,5 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "core"))
 
 if __name__ == "__main__":
-    # CoCo 的東西改放在 data\：舊的配置第一次啟動時把旁邊的搬進來（server/relocate.py）。
-    # 要在載入伺服器之前做——伺服器一載入就讀設定，設定要先搬進 data
-    from server import relocate
-    relocate.main(ROOT.parent, ROOT)
-
     from server.app import main
     main()

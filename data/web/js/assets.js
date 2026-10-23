@@ -685,6 +685,7 @@ function shrink(f) {
 // 「用架構預設」時改的是那個架構所有模型共用的；「自訂」只給這個模型；「不加」就不加。
 // 模型用 res_stem 對（小寫、不含資料夾與副檔名），跟 server/presets.py 一樣
 const presetKey = it => stem(it.path).toLowerCase();
+// 只拿來複製、不能直接改：以前沒有預設的架構都直接改這一個，Z-Image 打的字跑到 Krea 2、存進別的架構（R66）
 const EMPTY = {quality: "", negative: "", position: "before"};
 
 async function savePreset(body, redraw = false) {
@@ -703,7 +704,8 @@ function presetSection(it) {
   const arch = it.arch && it.arch !== "partial" ? it.arch : "";
   const own = A.presets.model[presetKey(it)];
   const mode = own ? own.mode : "inherit";
-  const cur = mode === "custom" ? own : (A.presets.arch[arch] || EMPTY);
+  // 還沒有預設的架構各自建一份放進 A.presets：存好之前重畫也還看得到剛打的字
+  const cur = mode === "custom" ? own : (A.presets.arch[arch] ||= {...EMPTY});
   const archName = ARCH_NAME[arch] || arch;
   // 改文字：存到自訂（這個模型）或架構預設（這個架構全部）
   const edit = patch => {

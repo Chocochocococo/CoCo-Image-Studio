@@ -42,5 +42,3 @@ PIPFAIL=[X] 套件安裝失敗，請看上面的訊息。
 VERIFYFAIL=[X] 安裝完成，但最後的檢查沒有通過，請看上面的訊息。
 STUDIOFAIL=[X] Studio 發生錯誤而停止。（結束代碼 %RC%）
 MISSING=[X] 缺少必要的程式檔案，請先把整個程式完整解壓縮。
-MOVEFAIL1=[X] 無法把舊的檔案搬進 data 資料夾，CoCo 可能還開著。
-MOVEFAIL2=請關掉所有 CoCo 的視窗，再執行一次 CoCo.bat。

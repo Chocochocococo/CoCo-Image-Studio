@@ -58,7 +58,13 @@ export async function showDataset() {
 }
 
 async function openDir(dir, quiet = false) {
-  await saveNow();                                   // 換資料集之前：這一個還沒存的先存（不然清單換掉就沒了）
+  // 換資料集之前：這一個還沒存的全部先存。存不進去就留在這個（清單換掉，剛改的標籤與描述就沒了，R65）
+  const err = await saveNow();
+  if (err) {
+    say(t("ds.unsavedStay", {error: err}), "err");
+    if (D.ui.dsdir !== D.dir) saveUi({dsdir: D.dir});
+    return false;
+  }
   const d = await get(`/api/dataset/open?dir=${enc(dir)}`).catch(e => ({error: e.message}));
   if (d.error) {
     if (!quiet) say(d.error, "err");
@@ -503,22 +509,25 @@ function saveNow() {
   return io(saveOnce);
 }
 
+// 還沒存的全部存：之前存失敗、又換到下一張改了，就不只一筆（以前只存第一筆）。回傳存不進去的原因，全部存好是 ""
 async function saveOnce() {
-  const it = D.items.find(x => x.dirty);
-  if (!it) return;
-  const was = it.dirty;
-  it.dirty = false;
-  const d = await post("/api/dataset/save", {dir: D.dir, path: it.path, tags: it.tags, desc: it.desc}).catch(e => ({error: e.message}));
-  if (d.error) { it.dirty = {...was, ...(it.dirty || {})}; say(d.error, "err"); return; }
-  it.text = d.text;
-  if (!it.has_txt) {
-    it.has_txt = true;
-    const cell = document.querySelectorAll(".dscell")[D.items.indexOf(it)];
-    cell?.querySelector(".dsnotag")?.remove();
+  let err = "";
+  for (const it of D.items.filter(x => x.dirty)) {
+    const was = it.dirty;
+    it.dirty = false;
+    const d = await post("/api/dataset/save", {dir: D.dir, path: it.path, tags: it.tags, desc: it.desc}).catch(e => ({error: e.message}));
+    if (d.error) { it.dirty = {...was, ...(it.dirty || {})}; say(d.error, "err"); err = d.error; continue; }
+    it.text = d.text;
+    if (!it.has_txt) {
+      it.has_txt = true;
+      const cell = document.querySelectorAll(".dscell")[D.items.indexOf(it)];
+      cell?.querySelector(".dsnotag")?.remove();
+    }
+    D.stats = null;
+    const s = $("dsSaved");
+    if (s && it === cur()) s.textContent = t("ds.saved");
   }
-  D.stats = null;
-  const s = $("dsSaved");
-  if (s && it === cur()) s.textContent = t("ds.saved");
+  return err;
 }
 
 async function go(i) {

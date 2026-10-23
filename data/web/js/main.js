@@ -23,6 +23,7 @@ import {afterRender, initLibrary, libraryNewImages, libraryScreen, refreshLibrar
 import {Filters, facets, loadFacets} from "./filters.js";
 import {info} from "./hint.js";
 import {closePop, openPop} from "./pop.js";
+import {closesSettings} from "./popclose.js";
 import {initRefine, refineNewImages, refineProgress, refineScreen, refineSettingsChanged, showRefine} from "./refine.js";
 import {editorScreen, initEditor, showEditor} from "./editor.js";
 import {initBatch} from "./batch.js";
@@ -367,7 +368,7 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("click", e => {
   const p = $("settings");
-  if (p && !p.hidden && !p.contains(e.target) && !e.target.closest("#btnSettings")) p.hidden = true;
+  if (p && !p.hidden && closesSettings(e.target, p)) p.hidden = true;
 });
 
 (async function start() {

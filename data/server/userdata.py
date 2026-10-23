@@ -4,12 +4,39 @@
 
 import threading
 
-from .state import C
+from .state import C, ROOT
 
 from i18n import tr
 
 # 變數檔的讀、改、寫回在同一把鎖裡：兩個視窗同時新增不同的變數，不會只剩一筆
 _VARS_LOCK = threading.Lock()
+
+# 隨附的範例放這裡（git 追蹤、跟著 zip 發布）。使用者的 variables.txt 與 wildcards\ 不進 git、不在 zip 裡：
+# 照說明「解壓縮到同一個資料夾、取代檔案」更新時，改過的才不會被蓋回範例
+EXAMPLES = ROOT / "assets" / "examples"
+
+
+def prepare_files():
+    """啟動時：舊版的變數檔先搬過來，再補上缺的範例（反過來的話範例先佔了 variables.txt，舊的變數就搬不過來）"""
+    migrate_vars()
+    ensure_examples()
+
+
+def ensure_examples():
+    """第一次啟動時放進範例：variables.txt 不存在才放；wildcards\\ 整個資料夾不存在才放
+    （資料夾在就不補個別的檔：使用者刪掉的範例不會每次啟動又跑回來）。已經有的檔一律不寫"""
+    jobs = [(EXAMPLES / "variables.txt", C.VARS_FILE)]      # 已經有了就寫不進去（下面的排他建立）
+    if not C.WILDCARD_DIR.exists():
+        src = EXAMPLES / "wildcards"
+        jobs += [(f, C.WILDCARD_DIR / f.relative_to(src)) for f in sorted(src.rglob("*.txt"))]
+    for src, dst in jobs:
+        try:
+            data = src.read_bytes()
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            with open(dst, "xb") as fh:          # 排他建立：檢查之後才冒出來的同名檔也不會被蓋掉
+                fh.write(data)
+        except OSError:
+            pass                                 # 放不進去就是沒有範例，其他功能照常
 
 
 # ---------------------------------------------------------------- 萬用字元

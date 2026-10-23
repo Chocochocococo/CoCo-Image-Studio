@@ -1,20 +1,21 @@
 // 呼叫本機後端。所有 POST 都必須帶這次啟動的 token（見 server/security.py），
-// 少了會被 403 擋下。token 由伺服器在回應 index.html 時注入到 window.COCO_TOKEN。
+// 少了會被 403 擋下。token 由伺服器在回應 index.html 時填進 <meta name="coco-token">
+// （不是 inline script：CSP 的 script-src 只有 'self'，首頁不能有任何內嵌的程式）。
 
 import {lang} from "./i18n.js";
 
-let TOKEN = window.COCO_TOKEN || "";
+// 測試在 node 跑時 document 是假的（或沒有），讀不到就是空字串
+const meta = (doc, name) => doc?.querySelector?.(`meta[name="${name}"]`)?.content ?? "";
+let TOKEN = meta(globalThis.document, "coco-token");
 
 // CoCo 重新啟動後 token 會換。這一頁是重開前打開的，POST 就會被 403 擋下，使用者只看到「forbidden」
 // （2026-10-06：圖庫「加進資料集」沒複製，資料夾卻建好了，以為功能壞了）。重新讀一次首頁拿新的 token、再送一次。
 // 別的網站讀不到 CoCo 的首頁（瀏覽器的同源政策），所以不會削弱 token 的防護
 async function freshToken() {
   const html = await (await fetch("/", {cache: "no-store"})).text();
-  const m = html.match(/window\.COCO_TOKEN = ("(?:[^"\\]|\\.)*")/);
-  const got = m ? JSON.parse(m[1]) : "";
+  const got = meta(new DOMParser().parseFromString(html, "text/html"), "coco-token");
   if (!got || got === TOKEN) return false;
   TOKEN = got;
-  window.COCO_TOKEN = got;
   return true;
 }
 

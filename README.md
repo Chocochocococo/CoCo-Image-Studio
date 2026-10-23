@@ -21,17 +21,17 @@ A local workbench for generating images with AI and training LoRAs.
 The Anima architecture also needs **RTX 30 series or newer**: it runs in bfloat16, which Turing (20 series) doesn't
 support natively, so it would be very slow. SDXL and SD 1.5 run in fp16 and are fine on the 20 series.
 
-Models aren't included. `data\models\` has one folder per kind, named the same as in ComfyUI (`checkpoints`, `diffusion_models`, `loras`, `vae`, `text_encoders`, `embeddings`, `controlnet`, `upscale_models`, `adetailer`, `rembg`…); put each file in the folder for its use. You can also point "Settings → Resource folders" at another tool's model folder (StabilityMatrix, ComfyUI, Forge); CoCo still reads its own folders too. Files that older versions kept in `loras\`, `vae\` and similar are moved into the matching folder on start.
+Models aren't included. `data\models\` has one folder per kind, named the same as in ComfyUI (`checkpoints`, `diffusion_models`, `loras`, `vae`, `text_encoders`, `embeddings`, `controlnet`, `upscale_models`, `adetailer`, `rembg`…); put each file in the folder for its use. You can also point "Settings → Resource folders" at another tool's model folder (StabilityMatrix, ComfyUI, Forge); CoCo still reads its own folders too.
 If you don't have a model yet, download the trial model (Anima, about 5 GB) from "Settings → Resource folders → Download models".
 
 ### Will it touch my existing setup?
 
 No. PyTorch and every package are installed in `data\venv\`, with versions pinned by `data\CoCo.bat` and
-`requirements-lock.txt` (torch 2.14.0+cu130 / diffusers 0.39.0; the light install uses the CPU build of torch plus
-`requirements-lite.txt`, still at the versions in `requirements-lock.txt`),
+the lock files (`requirements-lock.txt`: torch 2.14.0+cu130 / diffusers 0.39.0; the light install uses the CPU build of torch plus
+the packages of `requirements-lite.txt` at the same versions). Every download is checked against the SHA256 recorded in the lock files,
 separate from the Python, A1111 and ComfyUI already on your system. Python is CoCo's own copy too (`data\python\`, the official python.org package, SHA512 checked).
 
-Downloaded diffusers models are stored in `data\hf_cache\`, so they don't pile up in your user folder on drive C.
+Downloaded diffusers models are stored in `data\hf_cache\`, so they don't pile up in your user folder on drive C. The packages downloaded while installing are kept in `data\pip-cache\` and deleted once the install is done; the graphics driver's compile cache is kept in `data\cuda-cache\`.
 
 ---
 
@@ -56,6 +56,14 @@ Downloaded diffusers models are stored in `data\hf_cache\`, so they don't pile u
 > The first run downloads the official Python 3.11.9 (about 17 MB) into the `data` folder; any Python already on your computer isn't affected. Only without an internet connection does it use a Python 3.11–3.13 already on your computer.
 > You can also pin `CoCo Image Studio.exe` to the taskbar.
 > You can move or rename the whole CoCo folder without reinstalling. Recreate the shortcut afterwards: delete `data\venv\.coco-shortcut`, then open CoCo and it asks again.
+
+### Uninstalling
+
+Everything CoCo uses is in its own folder, so deleting the folder removes it completely:
+
+1. Generated images are saved in `data\outputs` by default; move out the ones you want to keep.
+2. If you created the shortcuts, press "Remove shortcuts" in "⚙ Settings → Other".
+3. Close CoCo, then delete the whole CoCo folder.
 
 ---
 
@@ -87,8 +95,9 @@ CoCo-Image-Studio\
     install_mode.txt  ← install type (full/lite, created on the first install)
     python\           ← CoCo's own Python (downloaded on the first install)
     venv\             ← created automatically
-    requirements-lock.txt
-    requirements-lite.txt  ← packages for the light install (versions from requirements-lock.txt)
+    requirements-lock.txt      ← packages with their SHA256 (every install is hash-checked)
+    requirements-lite.txt      ← packages for the light install (installed from requirements-lite-lock.txt)
+    requirements-torch-*.txt   ← torch / torchvision (CUDA or CPU build)
     core\             ← the Studio core
       conditioning.py   A1111-style prompt encoding
       template.py       template expansion
@@ -99,9 +108,6 @@ CoCo-Image-Studio\
     tools\
       studio.py         startup entry (the rest is in server\)
 ```
-
-> Earlier versions kept all of this at the top level of the CoCo folder. The first time you open this version, CoCo moves it into `data`
-> and updates the locations recorded in settings, compare sets and the gallery (the original files are backed up in `data\backups`).
 
 ---
 

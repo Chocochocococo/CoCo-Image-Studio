@@ -155,7 +155,8 @@ function dimsOf(items) {
                                                    vals: imgs.map(im => { const v = get1(im); return v == null ? "" : String(v); })}));
   for (const [key, lab] of [["prompt", "cmp.f.prompt"], ["negative", "cmp.f.negative"]]) {
     const ts = imgs.map(im => tags(im[key]));
-    const common = ts.reduce((a, b) => a.filter(x => b.includes(x)));
+    // 組裡的圖全被搬走或刪除時一張都沒有：沒有初始值的 reduce 會丟錯，整個比較頁畫不出來
+    const common = ts.length ? ts.reduce((a, b) => a.filter(x => b.includes(x))) : [];
     dims.push({key, lab, vals: ts.map(u => [...new Set(u.filter(x => !common.includes(x)))].map(x => `+${x}`).join(", "))});
   }
   return dims;
@@ -475,6 +476,8 @@ function drawMain() {
       doneBtn, archBtn, del,
       h("span.msg.cmsg", {id: "cmpMsg", role: "status"})),
     s.items.length > MANY ? h("p.cmany", {text: t("cmp.many", {n: s.items.length, max: MANY})}) : null,
+    // 有圖但全部找不到：滑桿、淘汰賽這時是空的，說一下為什麼
+    s.items.length && !s.items.some(it => !it.missing) ? h("p.cmany", {"data-i18n": "cmp.allMissing"}) : null,
     s.items.length ? (C.view === "slider" ? sliderView(s) : C.view === "grid" ? gridView(s, d)
       : C.view === "cup" ? cupView(s) : sideView(s, d))
       : h("p.dim", {"data-i18n": "cmp.noItems"}),

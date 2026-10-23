@@ -21,17 +21,17 @@
 Anima 架構額外需要 **RTX 30 系列以上**——它用 bfloat16，Turing（20 系列）沒有
 原生支援會非常慢。SDXL 與 SD1.5 走 fp16，20 系列沒問題。
 
-模型檔不隨專案附帶。`data\models\` 底下一種一格，名稱跟 ComfyUI 一樣（`checkpoints`、`diffusion_models`、`loras`、`vae`、`text_encoders`、`embeddings`、`controlnet`、`upscale_models`、`adetailer`、`rembg`…），照用途放進去就好；也可以在「設定 → 資源資料夾」指向其他工具（StabilityMatrix、ComfyUI、Forge）的模型資料夾，CoCo 自己的這些一樣會讀。舊版放在 `loras\`、`vae\` 這些地方的檔案，啟動時會自動搬進對應的分格。
+模型檔不隨專案附帶。`data\models\` 底下一種一格，名稱跟 ComfyUI 一樣（`checkpoints`、`diffusion_models`、`loras`、`vae`、`text_encoders`、`embeddings`、`controlnet`、`upscale_models`、`adetailer`、`rembg`…），照用途放進去就好；也可以在「設定 → 資源資料夾」指向其他工具（StabilityMatrix、ComfyUI、Forge）的模型資料夾，CoCo 自己的這些一樣會讀。
 還沒有模型的話，可以在「設定 → 資源資料夾 → 下載模型」下載試用模型（Anima，約 5 GB）。
 
 ### 會不會動到我現有的環境
 
 不會。PyTorch 與所有套件都裝在 `data\venv\`，版本由 `data\CoCo.bat` 與
-`requirements-lock.txt` 固定（torch 2.14.0+cu130 / diffusers 0.39.0；輕量安裝是 CPU 版 torch 加
-`requirements-lite.txt`，版本一樣照 `requirements-lock.txt`），
+鎖定檔固定（`requirements-lock.txt`：torch 2.14.0+cu130 / diffusers 0.39.0；輕量安裝是 CPU 版 torch 加
+`requirements-lite.txt` 列的套件，版本一樣）。每個下載的檔案都會核對鎖定檔裡記的 SHA256，
 跟系統上的 Python、A1111、ComfyUI 各自獨立。Python 也是 CoCo 自己的一份（`data\python\`，python.org 的官方套件、核對過 SHA512）。
 
-下載的 diffusers 模型也存在 `data\hf_cache\`，不會堆到 C 槽使用者目錄。
+下載的 diffusers 模型也存在 `data\hf_cache\`，不會堆到 C 槽使用者目錄。安裝時下載的套件先放在 `data\pip-cache\`，裝好就刪掉；顯示卡驅動程式編譯的快取放在 `data\cuda-cache\`。
 
 ---
 
@@ -56,6 +56,14 @@ Anima 架構額外需要 **RTX 30 系列以上**——它用 bfloat16，Turing�
 > 第一次會自動下載官方的 Python 3.11.9（約 17 MB）放在 `data` 資料夾裡，不會影響電腦上已經裝好的 Python；沒有網路時才改用電腦上的 Python 3.11～3.13。
 > `CoCo Image Studio.exe` 也可以釘選到工作列。
 > 整個 CoCo 資料夾可以搬移或改名，不用重裝；搬了之後捷徑要重建（刪掉 `data\venv\.coco-shortcut` 再打開 CoCo 就會再問一次）。
+
+### 不再使用時
+
+CoCo 的東西都在自己的資料夾裡，刪掉資料夾就移除乾淨：
+
+1. 生成的圖預設存在 `data\outputs`，要保留的先搬出來。
+2. 有建捷徑的話，到「⚙ 設定 → 其他」點擊「移除捷徑」。
+3. 關閉 CoCo，刪除整個 CoCo 資料夾。
 
 ---
 
@@ -87,8 +95,9 @@ CoCo-Image-Studio\
     install_mode.txt  ← 安裝方式（full／lite，第一次安裝時產生）
     python\           ← CoCo 自己的 Python（第一次安裝時下載）
     venv\             ← 自動建立
-    requirements-lock.txt
-    requirements-lite.txt  ← 輕量安裝的套件（版本照 requirements-lock.txt）
+    requirements-lock.txt      ← 套件與它們的 SHA256（每次安裝都核對）
+    requirements-lite.txt      ← 輕量安裝的套件（實際裝的是 requirements-lite-lock.txt）
+    requirements-torch-*.txt   ← torch／torchvision（CUDA 版或 CPU 版）
     core\             ← Studio 核心
       conditioning.py   A1111 風格的提示詞編碼
       template.py       模板展開引擎
@@ -99,9 +108,6 @@ CoCo-Image-Studio\
     tools\
       studio.py         啟動入口（本體在 server\）
 ```
-
-> 以前的版本把這些東西都放在 CoCo 資料夾的最外層。換成這一版之後第一次開啟，CoCo 會自動把它們搬進 `data`，
-> 設定、比較組、圖庫裡記的位置也會跟著改（原本的檔案備份在 `data\backups`）。
 
 ---
 

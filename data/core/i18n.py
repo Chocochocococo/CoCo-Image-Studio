@@ -6,6 +6,7 @@
 
 語言是整個行程共用一個：前端每個請求都帶 X-CoCo-Lang（web/js/api.js），伺服器收到就換；
 生成子行程啟動時從環境變數 COCO_LANG 拿，之後每個指令都帶 lang（server/worker_client.send）。
+訓練行程沒有指令可以帶：伺服器換語言時改寫一個小檔（環境變數 COCO_LANG_FILE，server/train.py），它每次產生訊息前讀一下。
 介面只有一位使用者、各視窗的語言設定相同，所以不分請求各記一份；換語言之前已經產生的訊息（紀錄、排程的錯誤）維持原本的語言。
 """
 
@@ -28,6 +29,8 @@ sys.modules.setdefault("core.i18n", sys.modules[__name__])
 _lock = threading.Lock()
 _cache = {}
 _lang = SOURCE
+_listeners = []         # 換語言時要通知的（server/train.py 改寫訓練行程的語言檔）
+_follow = None          # 訓練行程：語言跟著這個檔
 
 
 def _norm(lang):
@@ -43,8 +46,14 @@ def _norm(lang):
 def set_lang(lang):
     global _lang
     got = _norm(lang)
-    if got:
+    if got and got != _lang:
         _lang = got
+        for fn in list(_listeners):
+            fn(got)
+
+
+def on_change(fn):
+    _listeners.append(fn)
 
 
 def lang():
@@ -63,6 +72,11 @@ def _dict(lang):
 
 def tr(key, **params):
     """照目前語言取出 key 的文字，{名稱} 換成 params；跟前端 t() 的規則一樣（n 是 1 時改用「鍵.one」）"""
+    if _follow:
+        try:
+            set_lang(Path(_follow).read_text(encoding="utf-8"))
+        except OSError:                 # 訓練結束時伺服器刪掉了：沿用最後的
+            pass
     d = _dict(_lang)
     if str(params.get("n")) == "1" and f"{key}.one" in d:
         key += ".one"
@@ -80,3 +94,4 @@ def join(items):
 
 
 set_lang(os.environ.get("COCO_LANG"))
+_follow = os.environ.get("COCO_LANG_FILE") or None

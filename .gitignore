@@ -1,6 +1,10 @@
 # ── 虛擬環境 ──────────────────────────────
 venv/
 .venv/
+# 安裝時 pip 的下載快取（CoCo.bat 的 PIP_CACHE_DIR，裝好就刪）
+pip-cache/
+# 顯示卡驅動程式即時編譯 CUDA 程式碼的快取（config.py 的 CUDA_CACHE_PATH）
+cuda-cache/
 
 # ── Python 快取 ───────────────────────────
 __pycache__/
@@ -45,6 +49,11 @@ datasets.json
 masks/
 covers/
 edits/
+
+# 使用者的變數與萬用字元：範例在 data/assets/examples，第一次啟動時複製過去（server/userdata.py 的 ensure_examples）。
+# 不進 git、不在公開版的 zip 裡，覆蓋更新才不會把使用者改過的蓋回範例
+/data/variables.txt
+/data/wildcards/
 
 # ── 圖庫索引（掃描就會重建）───────────────
 gallery.db

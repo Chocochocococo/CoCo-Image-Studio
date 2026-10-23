@@ -12,7 +12,7 @@ import {closePop} from "./pop.js";
 import {send} from "./sync.js";
 import {info} from "./hint.js";
 import {downloadsBox} from "./modeldl.js";
-import {installBox} from "./install.js";
+import {installBox, shortcutBox} from "./install.js";
 import {aboutBody} from "./about.js";
 
 // 設定鍵 → 顯示文字
@@ -495,7 +495,8 @@ function tabBody(tab) {
                         e.target.value = S.cur[key];
                         markDirty();
                       }}}))))),
-    h("section.ssec", {}, h("h3", {"data-i18n": "set.install"}), installBox())];
+    h("section.ssec", {}, h("h3", {"data-i18n": "set.install"}), installBox()),
+    h("section.ssec", {}, ...head("h3", "set.shortcut", "set.shortcutHint"), shortcutBox())];
   return [
     h("section.ssec", {}, ...head("h3", "set.output", "set.outputHint"), outputBox()),
     h("section.ssec", {}, ...head("h3", "set.scan", "set.scanHint"), dirList("SCAN_DIRS")),

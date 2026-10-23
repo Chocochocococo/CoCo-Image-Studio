@@ -34,3 +34,17 @@ def _is_loopback_origin(value):
                 and not u.username and not u.password)
     except ValueError:
         return False
+
+
+def _is_same_site_request(headers):
+    """GET /api/… 只接受 CoCo 自己的頁面（或使用者自己在網址列打的）發出的請求。
+
+    GET 不帶 token，別的網站用 <img src> 或 fetch 就能打有副作用的 GET（/api/dataset/open 會寫
+    datasets.json、把整個資料夾當資料集掃一遍），Host 擋不了這種（Host 照樣是 127.0.0.1）。
+    瀏覽器會帶 Sec-Fetch-Site：same-origin＝自己的頁面、none＝使用者在網址列打的或書籤；cross-site
+    與 same-site（同一台電腦別的 port 的網頁）都擋。沒有這個標頭的（curl、舊瀏覽器）看 Origin：
+    跨來源的 fetch 才會帶，不是本機就擋。首頁與靜態檔不走這裡：從別處點連結打開 CoCo 要能開。"""
+    site = str(headers.get("Sec-Fetch-Site") or "").strip().lower()
+    if site and site not in ("same-origin", "none"):
+        return False
+    return _is_loopback_origin(headers.get("Origin"))

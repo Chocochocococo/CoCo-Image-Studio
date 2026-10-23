@@ -2,14 +2,16 @@
 """啟動：更新圖庫索引、做資料遷移，然後開 HTTP 服務。
 """
 
+import os
 import threading
 import webbrowser
+from pathlib import Path
 
 from .handler import Handler, Server
 from .library import run_index
 from .resources import model_arch
-from .state import APP_PORT, APP_VERSION, DB_PATH, SET, db, load_ui
-from .userdata import migrate_vars
+from .state import APP_PORT, APP_VERSION, DB_PATH, SET, C, db, load_ui
+from .userdata import prepare_files
 from .worker_client import WORKER
 
 import i18n
@@ -27,6 +29,20 @@ def startup_lang():
         except Exception:
             pref = ""
     i18n.set_lang(pref)
+
+
+def ensure_default_output():
+    """CoCo 預設的輸出資料夾（data\\outputs）要第一次生成才會建出來：全新安裝一啟動掃圖庫就印
+    「[!] 資料夾不存在」，新使用者第一眼看到像是出錯。只建預設的那個、而且它在圖庫掃描範圍裡才建；
+    使用者自己加的資料夾不存在時照樣提醒（多半是外接碟沒插，不能自動建一個空的）"""
+    key = lambda p: os.path.normcase(os.path.abspath(str(p)))
+    out = Path(C.OUTPUT_DIR_DEFAULT)
+    if key(out) not in {key(d) for d in C.SCAN_DIRS}:
+        return
+    try:
+        out.mkdir(exist_ok=True)
+    except OSError:
+        pass         # 建不了就跟以前一樣，掃描時印提醒
 
 
 def title_line():
@@ -50,6 +66,7 @@ def main():
         print("  [!] " + tr("srv.app.modelHomeErr", e=e))
     try:
         import gallery_index as GI
+        ensure_default_output()
         for d in GI.SCAN_DIRS:
             print("  " + tr("srv.app.scan", d=d))
         print("\n  " + tr("srv.app.indexing"))
@@ -65,7 +82,7 @@ def main():
         print("\n[X] " + tr("srv.app.noDb", path=DB_PATH) + "\n")
         return
 
-    migrate_vars()
+    prepare_files()          # 變數與萬用字元：舊的變數檔搬過來、第一次啟動放進範例（不蓋掉已經有的）
     moved = SET.migrate_overrides(model_arch)
     if moved:
         arch, keys = moved

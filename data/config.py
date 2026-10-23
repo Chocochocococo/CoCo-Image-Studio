@@ -212,21 +212,25 @@ MASK_DIR = ROOT / "masks"                       # 局部重繪的遮罩（精修
 COVER_DIR = ROOT / "covers"                     # 資源庫自己上傳的封面
 SETTINGS_FILE = ROOT / "settings.json"
 HF_CACHE = ROOT / "hf_cache"      # diffusers 下載的模型都放這裡
+CUDA_CACHE = ROOT / "cuda-cache"  # 顯示卡驅動程式即時編譯 CUDA 程式碼的快取
 
 
-def _set_hf_home():
-    """把 Hugging Face 的快取指到專案底下。
+def _set_caches():
+    """把 Hugging Face 與 CUDA 的快取指到專案底下，刪掉 CoCo 資料夾就不留東西。
 
-    預設在使用者家目錄的 .cache/huggingface，不在專案資料夾裡，
+    Hugging Face 預設在使用者家目錄的 .cache/huggingface，不在專案資料夾裡，
     很容易在 C 槽默默堆積數十 GB 而且不知道是誰下載的。
+    CUDA 的預設在 AppData\\Roaming\\NVIDIA\\ComputeCache（2026-10-23 從頭裝的副本生成第一張 SDXL 時多了 6 個檔、0.9 MB）。
+    生成、訓練的子行程繼承主行程的環境變數，所以在這裡設就好（要在第一次用顯示卡之前）。
     """
     import os
     HF_CACHE.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("HF_HOME", str(HF_CACHE))
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(HF_CACHE / "hub"))
+    os.environ.setdefault("CUDA_CACHE_PATH", str(CUDA_CACHE))
 
 
-_set_hf_home()
+_set_caches()
 
 
 # ══════════════════════════════════════════════════════════════

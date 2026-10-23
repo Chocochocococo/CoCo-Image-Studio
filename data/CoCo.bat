@@ -16,13 +16,20 @@ set "COCO_OPEN=%COCO_EXE%"
 set "COCO_ICON=%COCO_EXE%,0"
 if not exist "%COCO_EXE%" set "COCO_OPEN=%COCO_BAT%"
 if not exist "%COCO_EXE%" set "COCO_ICON=%COCO_DIR%assets\coco.ico"
+rem pip keeps what it downloads in a cache. Its own is in the user profile
+rem (AppData\Local\pip\cache) and stays there after the CoCo folder is
+rem deleted: about 2 GB for a Full install, mostly PyTorch. CoCo's goes in
+rem data\pip-cache instead. An install that stops halfway (PIPFAIL) keeps it
+rem and picks up from there without downloading again; START deletes it.
+set "PIP_CACHE_DIR=%COCO_DIR%pip-cache"
 
 set "VENV_PY=venv\Scripts\python.exe"
 set "READY_FILE=venv\.coco-ready"
 rem Full or Light install, asked on the first setup (ASK below) and kept in
-rem MODE_FILE. Light has no generation engine: CPU-only PyTorch plus
-rem requirements-lite.txt, for the gallery, explore, compare, recombine, output
-rem and the library. Settings can switch it to Full (server\install.py writes
+rem MODE_FILE. Light has no generation engine: CPU-only PyTorch plus the
+rem packages listed in requirements-lite.txt (installed from the generated
+rem requirements-lite-lock.txt), for the gallery, explore, compare, recombine,
+rem output and the library. Settings can switch it to Full (server\install.py writes
 rem "full" here); the next start then installs the rest. Installs made before
 rem this choice existed are Full.
 set "MODE_FILE=install_mode.txt"
@@ -32,16 +39,23 @@ rem that deleting the ready marker really does re-check what is installed.
 set "TORCH_VER=2.14.0"
 set "TORCHVISION_VER=0.29.0"
 set "CU_TAG=cu130"
-rem Bump DEPS_REV whenever requirements-lock.txt changes. The ready marker
-rem records it, so an existing install syncs the CoCo packages on its next
-rem start (PROBE below) without touching torch.
+rem Bump DEPS_REV whenever a lock file changes (tools\lock_deps.py writes all
+rem four: requirements-lock.txt, requirements-lite-lock.txt and the two
+rem requirements-torch-*.txt). The ready marker records it, so an existing
+rem install syncs the CoCo packages on its next start (PROBE below) without
+rem touching torch. Every pip install below runs with --require-hashes: the
+rem lock files carry the SHA256 of every file, and a download that does not
+rem match is refused.
 rem   2  scipy for the Beta schedule
 rem   3  ultralytics for the face fix
 rem   4  every package they depend on is pinned too (tools\lock_deps.py)
 rem   5  ultralytics dropped (CoCo runs the face finder itself); opencv listed directly
 rem   6  comfy-kitchen for running int8 models in int8 (Qwen Image 2.1)
 rem   7  truststore: downloads use the Windows certificate store (antivirus HTTPS scanning)
-set "DEPS_REV=7"
+rem   8  Pillow 13 (security fixes, incl. the JPEG decoder) with certifi, urllib3, fsspec
+rem   9  every download is checked against the SHA256 in the lock files (--require-hashes);
+rem      Light and torch get their own lock files
+set "DEPS_REV=9"
 set "READY_TAG=%TORCH_VER%+%CU_TAG% deps%DEPS_REV%"
 set "LITE_TAG=%TORCH_VER%+cpu deps%DEPS_REV% lite"
 
@@ -102,18 +116,10 @@ set "M_PIPFAIL=[X] Package installation failed. See the messages above."
 set "M_VERIFYFAIL=[X] Installation finished, but the final check failed. See the messages above."
 set "M_STUDIOFAIL=[X] Studio stopped with an error. (exit code %%RC%%)"
 set "M_MISSING=[X] Required project files are missing. Extract the complete project first."
-set "M_MOVEFAIL1=[X] Could not move the old files into the data folder. CoCo may still be open."
-set "M_MOVEFAIL2=Close every CoCo window, then run CoCo.bat again."
 set "MSG_ZH=web\locales\launcher.zh-TW.txt"
 if "%UILANG%"=="zh" if exist "%MSG_ZH%" for /f "usebackq eol=# tokens=1,* delims==" %%A in ("%MSG_ZH%") do set "M_%%A=%%B"
 
 if not exist "tools\studio.py" goto MISSING
-rem Only next to an installed CoCo (its exe, or the CoCo.bat of the old layout)
-rem is the folder above ours CoCo's own: never take anything from elsewhere.
-set "OLDTOP="
-if exist "%COCO_EXE%" set "OLDTOP=1"
-if exist "%COCO_TOP%CoCo.bat" set "OLDTOP=1"
-if defined OLDTOP call :RELOCATE || goto MOVEFAIL
 if not exist "requirements-lock.txt" goto MISSING
 if not exist "requirements-lite.txt" goto MISSING
 set "MODE="
@@ -184,7 +190,7 @@ if /i "%MODE%"=="lite" goto PROBELITE
 "%VENV_PY%" -c "import sys, torch; sys.exit(0 if torch.__version__.startswith('%TORCH_VER%+%CU_TAG%') else 1)" >nul 2>nul
 if errorlevel 1 goto SETUP
 echo %M_CHECKPKG%
-"%VENV_PY%" -m pip install -r requirements-lock.txt -q
+"%VENV_PY%" -m pip install -r requirements-lock.txt --require-hashes -q
 if errorlevel 1 goto DEPSWARN
 "%VENV_PY%" -c "import sys, torch, torchvision, diffusers, transformers, accelerate, safetensors, sentencepiece, google.protobuf, peft, PIL, scipy, cv2, pynvml, comfy_kitchen, truststore; sys.exit(0 if torch.cuda.is_available() else 2)" >nul 2>nul
 if errorlevel 2 goto NOCUDA
@@ -193,12 +199,13 @@ if errorlevel 1 goto SETUP
 goto START
 
 :PROBELITE
-rem Same as PROBE for a Light install: CPU torch, the lite package list with
-rem the versions from requirements-lock.txt, no GPU check.
+rem Same as PROBE for a Light install: CPU torch, the Light lock file (the
+rem packages of requirements-lite.txt with the versions and hashes of
+rem requirements-lock.txt), no GPU check.
 "%VENV_PY%" -c "import sys, torch; sys.exit(0 if torch.__version__.startswith('%TORCH_VER%+cpu') else 1)" >nul 2>nul
 if errorlevel 1 goto SETUP
 echo %M_CHECKPKG%
-"%VENV_PY%" -m pip install -r requirements-lite.txt -c requirements-lock.txt -q
+"%VENV_PY%" -m pip install -r requirements-lite-lock.txt --require-hashes -q
 if errorlevel 1 goto DEPSWARN
 "%VENV_PY%" -c "import torch, transformers, safetensors, truststore, PIL, numpy" >nul 2>nul
 if errorlevel 1 goto SETUP
@@ -278,12 +285,16 @@ if /i "%MODE%"=="lite" goto INSTALLLITE
 echo.
 call echo %M_TORCHCUDA%
 "%VENV_PY%" -m pip uninstall -y torch torchvision >nul 2>nul
-"%VENV_PY%" -m pip install torch==%TORCH_VER%+%CU_TAG% torchvision==%TORCHVISION_VER%+%CU_TAG% --index-url https://download.pytorch.org/whl/%CU_TAG%
+rem requirements-torch-%CU_TAG%.txt pins the same versions as TORCH_VER and
+rem TORCHVISION_VER above (tests\test_lock.py checks) with the SHA256 of every
+rem wheel on download.pytorch.org. --no-deps: what they depend on is in
+rem requirements-lock.txt, installed and hash-checked right after.
+"%VENV_PY%" -m pip install -r requirements-torch-%CU_TAG%.txt --require-hashes --no-deps
 if errorlevel 1 goto PIPFAIL
 
 echo.
 echo %M_DEPS%
-"%VENV_PY%" -m pip install -r requirements-lock.txt
+"%VENV_PY%" -m pip install -r requirements-lock.txt --require-hashes
 if errorlevel 1 goto PIPFAIL
 
 echo.
@@ -297,12 +308,12 @@ goto START
 echo.
 call echo %M_TORCHCPU%
 "%VENV_PY%" -m pip uninstall -y torch torchvision >nul 2>nul
-"%VENV_PY%" -m pip install torch==%TORCH_VER%+cpu --index-url https://download.pytorch.org/whl/cpu
+"%VENV_PY%" -m pip install -r requirements-torch-cpu.txt --require-hashes --no-deps
 if errorlevel 1 goto PIPFAIL
 
 echo.
 echo %M_DEPS%
-"%VENV_PY%" -m pip install -r requirements-lite.txt -c requirements-lock.txt
+"%VENV_PY%" -m pip install -r requirements-lite-lock.txt --require-hashes
 if errorlevel 1 goto PIPFAIL
 
 echo.
@@ -313,6 +324,7 @@ if errorlevel 1 goto VERIFYFAIL
 
 :START
 call :SHORTCUT
+if exist "pip-cache" rmdir /s /q "pip-cache"
 echo.
 echo %M_STARTING%
 "%VENV_PY%" tools\studio.py
@@ -326,33 +338,6 @@ if "%RC%"=="0" exit /b 0
 if "%RC%"=="-1073741510" exit /b 0
 goto STUDIOFAIL
 
-:RELOCATE
-rem Until 2026-10-16 everything sat next to CoCo.bat. The program moves its
-rem own files into data\ on its first start (server\relocate.py), but the
-rem venv, the Python it runs from and the install choice must be in place
-rem before it starts, so they are moved here. A folder in use (CoCo still
-rem open) cannot be moved: stop and say so, instead of installing a second
-rem copy. If data\ already has one, the old one is left where it is.
-set "MOVED="
-set "MOVEBAD="
-for %%D in (venv python) do (
-    if exist "..\%%D\" if not exist "%%D\" (
-        move "..\%%D" "%%D" >nul 2>nul
-        if errorlevel 1 (set "MOVEBAD=%%D") else set "MOVED=1"
-    )
-)
-if exist "..\install_mode.txt" if not exist "install_mode.txt" move "..\install_mode.txt" "install_mode.txt" >nul 2>nul
-if defined MOVEBAD exit /b 1
-if defined MOVED call :FIXLINKS
-exit /b 0
-
-:FIXLINKS
-rem Shortcuts made before the move open the old CoCo.bat and take their icon
-rem from the old place. Only the ones that open this CoCo (its exe, this file
-rem or the old CoCo.bat next to data\) are touched; they now open the exe.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$w = New-Object -ComObject WScript.Shell; $mine = @($env:COCO_OPEN, $env:COCO_BAT, ($env:COCO_TOP + 'CoCo.bat')); foreach ($d in [Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs')) { $p = Join-Path $d 'CoCo Image Studio.lnk'; if (Test-Path $p) { $s = $w.CreateShortcut($p); if ($mine -contains $s.TargetPath) { $s.TargetPath = $env:COCO_OPEN; $s.WorkingDirectory = $env:COCO_DIR; $s.IconLocation = $env:COCO_ICON; $s.Save() } } }" >nul 2>nul
-exit /b 0
-
 :LANG
 rem The language the launcher speaks, picked the same way as the server's
 rem console messages (server\app.py, startup_lang): the language chosen in
@@ -361,7 +346,6 @@ rem language. That one is read from the registry; PowerShell can report a
 rem different culture than the one the desktop shows.
 set "UILANG=en"
 set "UI_JSON=gallery_ui.json"
-if not exist "%UI_JSON%" if exist "..\gallery_ui.json" set "UI_JSON=..\gallery_ui.json"
 if exist "%UI_JSON%" findstr /c:"\"lang\": \"zh-TW\"" "%UI_JSON%" >nul 2>nul && set "UILANG=zh" && exit /b 0
 if exist "%UI_JSON%" findstr /c:"\"lang\": \"en\"" "%UI_JSON%" >nul 2>nul && exit /b 0
 set "WINLANG="
@@ -400,8 +384,10 @@ exit /b 1
 :FIXVENV
 rem The venv was made from CoCo's own Python. pyvenv.cfg holds that Python's
 rem full path, so it is written again on every start: the CoCo folder can be
-rem moved or renamed without reinstalling.
->"venv\pyvenv.cfg" echo home = %COCO_DIR%python
+rem moved or renamed without reinstalling. The path goes through a FOR
+rem variable: pasted straight into the echo line, a & in the folder name
+rem splits the command and a ^ disappears. pyvenv.cfg takes no quotes.
+for %%P in ("%COCO_DIR%python") do >"venv\pyvenv.cfg" echo home = %%~P
 >>"venv\pyvenv.cfg" echo include-system-site-packages = false
 >>"venv\pyvenv.cfg" echo version = %PY_VER%
 exit /b 0
@@ -451,12 +437,6 @@ goto FAIL
 :STUDIOFAIL
 echo.
 call echo %M_STUDIOFAIL%
-goto FAIL
-
-:MOVEFAIL
-echo.
-echo %M_MOVEFAIL1%
-echo     %M_MOVEFAIL2%
 goto FAIL
 
 :MISSING

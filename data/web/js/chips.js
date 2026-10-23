@@ -29,14 +29,24 @@ const groupOf = cat => CAT_GROUP[cat] || "";
 
 // 寫法 → {name, cat, zh}；null＝查過、標籤庫沒有
 const INFO = new Map();
+// 查詢中的：寫法 → 那次查詢。別的畫面要同一個字就等同一個、回來一樣補畫（R67：以前用 null 佔位，
+// 第二個畫面當成查過、不補畫；查失敗也一直留著 null，重新整理之前都不再查）
+const ASKING = new Map();
 
+// 回傳 names 裡有沒有新查到的（有才需要重畫）
 async function lookup(names) {
-  const want = [...new Set(names)].filter(n => n && !INFO.has(n));
-  if (!want.length) return false;
-  for (const n of want) INFO.set(n, null);          // 先佔位，免得重複問
-  const d = await post("/api/tags/lookup", {names: want}).catch(() => ({items: {}}));
-  for (const [k, v] of Object.entries(d.items || {})) INFO.set(k, v);
-  return Object.keys(d.items || {}).length > 0;
+  const mine = [...new Set(names)].filter(n => n && !INFO.has(n));
+  const want = mine.filter(n => !ASKING.has(n));
+  if (want.length) {
+    const ask = post("/api/tags/lookup", {names: want}).then(d => {
+      for (const [k, v] of Object.entries(d.items)) INFO.set(k, v);
+      for (const n of want) if (!INFO.has(n)) INFO.set(n, null);
+    }).catch(() => {})        // 連不上、或回錯誤（沒有 items）：不記，下次再問
+      .finally(() => want.forEach(n => ASKING.delete(n)));
+    for (const n of want) ASKING.set(n, ask);
+  }
+  await Promise.all(new Set(mine.map(n => ASKING.get(n))));
+  return mine.some(n => INFO.get(n));
 }
 
 // 標籤 → 顏色組（重組頁拆提示詞用）：先把沒查過的一次查完，回傳查表函式；查不到的是 ""

@@ -97,7 +97,8 @@ _LOCK = threading.RLock()
 STATE = {"running": False, "phase": "", "step": 0, "total": 0, "epoch": 0, "epochs": 0, "loss": [], "lr": 0.0,
          "sec": 0.0, "eta": 0, "log": [], "saved": [], "error": "", "name": "", "started": 0.0, "cache": [0, 0],
          "samples": [], "sets": {}, "kind": "lora"}
-_PROC = {"p": None, "stop_file": None, "run": {}, "kind": "lora", "n_images": 0, "resumed": "", "state_saved": False}
+_PROC = {"p": None, "stop_file": None, "lang_file": None, "run": {}, "kind": "lora", "n_images": 0, "resumed": "",
+         "state_saved": False}
 RUN = {}                       # 這次一般 LoRA 訓練的資料集與設定：訓練完寫進資料集的訓練紀錄（dataset.add_run）
 
 
@@ -591,16 +592,33 @@ def _launch(run, kind, n_images, stop_worker):
                  lr=0.0, sec=0.0, eta=0, saved=[], error="", name=run["name"], started=time.time(),
                  cache=[0, n_images], samples=[], kind=kind)
     _log(tr("srv.tr.engineOff"))
-    env = {**__import__("os").environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "COCO_LANG": i18n.lang()}
+    lang_file = cfg_path.with_suffix(".lang")       # 訓練中換介面語言，之後的訊息跟著換（_lang_changed）
+    lang_file.write_bytes(i18n.lang().encode("utf-8"))
+    env = {**__import__("os").environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "COCO_LANG": i18n.lang(),
+           "COCO_LANG_FILE": str(lang_file)}
     script = "slider_train.py" if slider else SCRIPT[run["arch"]]
     p = subprocess.Popen([sys.executable, "-u", str(Path(ROOT) / "core" / script), str(cfg_path)],
                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                          encoding="utf-8", errors="replace", cwd=str(ROOT), env=env,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    _PROC.update(p=p, stop_file=stop_file, run={k: v for k, v in run.items() if k not in ("stop_file", "resume")},
+    _PROC.update(p=p, stop_file=stop_file, lang_file=lang_file, run={k: v for k, v in run.items() if k not in ("stop_file", "resume")},
                  kind=kind, n_images=n_images, resumed=run.get("resume") or "", state_saved=False)
-    threading.Thread(target=_read, args=(p, cfg_path, stop_file), daemon=True).start()
+    threading.Thread(target=_read, args=(p, cfg_path, stop_file, lang_file), daemon=True).start()
     threading.Thread(target=_read_err, args=(p,), daemon=True).start()
+
+
+def _lang_changed(lang):
+    """訓練行程沒有指令可以帶語言（生成子行程是每個指令帶），改寫語言檔，它每次產生訊息前讀（core/i18n.py）。
+    以前只在啟動時給：訓練中換語言，之後的試畫、完成、錯誤紀錄還是原本的語言（R68）。訓練結束時 _read 刪掉這個檔，之後就不寫"""
+    f = _PROC.get("lang_file")
+    if f and f.exists():
+        try:
+            f.write_bytes(lang.encode("utf-8"))
+        except OSError:
+            pass
+
+
+i18n.on_change(_lang_changed)
 
 
 # ---------------------------------------------------------------- 暫停、接續（使用者要求，2026-10-07 修改核對表 F3）
@@ -842,7 +860,7 @@ def _read(p, *temp_files):
                 pass
     finally:
         code = p.wait()
-        for f in temp_files:                           # 暫存的設定檔與停止檔
+        for f in temp_files:                           # 暫存的設定檔、停止檔與語言檔
             f.unlink(missing_ok=True)
         with _LOCK:
             if STATE["running"]:                       # 沒有說 done 就結束：當掉了

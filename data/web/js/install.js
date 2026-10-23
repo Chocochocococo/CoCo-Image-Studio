@@ -67,3 +67,20 @@ export function installBox() {
   if (!INSTALL.lite) return h("p", {text: t("set.install.full")});
   return h("div.litebox", {}, h("p", {}, h("b", {text: t("set.install.lite")})), h("p.hint", {text: t("lite.body")}), action());
 }
+
+// ⚙ 設定 →「其他」：桌面與開始功能表上開這份 CoCo 的捷徑（server/shortcut.py）。不再用 CoCo 時先移除，再刪資料夾。
+// 查捷徑要開一次 PowerShell（約 0.7 秒），所以先畫空的、查到再換
+export function shortcutBox() {
+  const box = h("div.scbox", {});
+  const show = r => box.replaceChildren(
+    !r ? h("p.hint.warn", {text: t("set.scFail")}) :
+    r.error ? h("p.hint.warn", {text: r.error}) :
+    r.removed ? h("p.hint", {text: t("set.scDone")}) :
+    !r.found ? h("p.hint", {text: t("set.scNone")}) :
+    h("button.mini", {type: "button", text: t("set.scRemove"), on: {click: async e => {
+      e.currentTarget.disabled = true;
+      show(await post("/api/shortcut/remove", {}).catch(() => null));
+    }}}));
+  get("/api/shortcut").then(show, () => show(null));
+  return box;
+}

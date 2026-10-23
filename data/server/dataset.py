@@ -373,7 +373,10 @@ def save(root, path, text=None, tags=None, desc=""):
         text = join_caption([x.strip() for x in str(tags).split(",") if x.strip()], str(desc or "").strip(),
                             get_opts()["separator"])
     with _TXT:
-        write_text(caption_path(img), text or "")
+        try:
+            write_text(caption_path(img), text or "")
+        except OSError as e:         # 被別的程式開著、沒有權限、磁碟滿：以前連線直接斷掉，打標台只看到「Failed to fetch」
+            return {"error": tr("srv.ds.saveFail", name=caption_path(img).name, e=e.strerror or e)}
     return {"ok": True, "text": read_text(caption_path(img))}
 
 

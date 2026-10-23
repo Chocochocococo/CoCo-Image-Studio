@@ -2,12 +2,14 @@
 """HTTP 路由。介面的靜態檔在 web/（見 static.py）。
 """
 
+import html
 import importlib
 import json
 import os
 import secrets
 import socket
 import sqlite3
+import subprocess
 import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -15,12 +17,12 @@ from urllib.parse import parse_qs, urlparse
 
 from . import static
 from . import (assets, compare, controlnet, dataset, eagle, train, edit, explore, fileops, install, jobqueue, kra, lorahash, modeldl, pairmaker, presets, recipes,
-               refine, rembg, trash, upscalers, usage, usertags)
+               refine, rembg, shortcut, trash, upscalers, usage, usertags)
 from .library import build_query, lib_facets, make_thumb, open_folder, reveal, run_index, thumb_ver
 from .prompts import extract_loras, tag_lookup, tag_search
 from .resources import (KINDS, ROOT_KINDS, browse, detectors, model_arch, res_cover_path, res_dirs, res_scan, root_folders, set_kind,
                         resolve_lora)
-from .security import _is_loopback_netloc, _is_loopback_origin
+from .security import _is_loopback_netloc, _is_loopback_origin, _is_same_site_request
 from .settings_api import arch_switch, settings_out, update_settings
 from .state import (API_TOKEN, APP_VERSION, C, DB_WRITE_LOCK, EDIT_REQUEST_BODY, INDEX_STATE, MAX_REQUEST_BODY,
                     PAGE_SIZE, ROOT, SET, SETTINGS_APPLY_LOCK, TPL, VERSION, db, load_ui,
@@ -96,7 +98,8 @@ class Handler(BaseHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data: blob:; "
             "style-src 'self' 'unsafe-inline'; "
-            "script-src 'self' 'unsafe-inline'; object-src 'none'; "
+            # script 只准 web/js 的檔：首頁沒有 inline script（token 與版本號在 <meta>），javascript: 網址也跑不了
+            "script-src 'self'; object-src 'none'; "
             "base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
         )
 
@@ -161,6 +164,9 @@ class Handler(BaseHTTPRequestHandler):
         if not self._local_host():
             return self._json({"error": "forbidden"}, 403)
         u = urlparse(self.path)
+        if u.path.startswith("/api/") and not _is_same_site_request(self.headers):
+            # 別的網站觸發的 GET（CSRF，見 server/security.py）：只擋 API，首頁與靜態檔照常
+            return self._json({"error": "forbidden"}, 403)
         p = {k: v[0] for k, v in parse_qs(u.query).items()}
 
         moved = static.old_redirect(u.path)
@@ -179,11 +185,11 @@ class Handler(BaseHTTPRequestHandler):
             f, mime = hit
             b = f.read_bytes()
             if f.suffix == ".html":
-                # __COCO_API_TOKEN__ 換成這次啟動的 token；__COCO_APP_VERSION__ 換成版本號（關於頁顯示）
-                b = b.replace(b"__COCO_API_TOKEN__",
-                              json.dumps(API_TOKEN).encode("utf-8"))
-                b = b.replace(b"__COCO_APP_VERSION__",
-                              json.dumps(APP_VERSION).encode("utf-8"))
+                # __COCO_API_TOKEN__ 換成這次啟動的 token；__COCO_APP_VERSION__ 換成版本號（關於頁顯示）。
+                # 兩個都在 <meta> 的 content 屬性裡（api.js、about.js 讀），所以照 HTML 屬性跳脫；
+                # 不用 inline script，CSP 的 script-src 才能只留 'self'
+                b = b.replace(b"__COCO_API_TOKEN__", html.escape(API_TOKEN, quote=True).encode("utf-8"))
+                b = b.replace(b"__COCO_APP_VERSION__", html.escape(APP_VERSION, quote=True).encode("utf-8"))
             # 字型不會變（檔名含版本就換檔名），可以長快取；14 MB 的楷體
             # 每次都重抓太浪費。HTML / JS / CSS 開發中常改，一律不快取。
             self._bytes(b, mime, cache=f.suffix in (".ttf", ".woff2"))
@@ -359,6 +365,12 @@ class Handler(BaseHTTPRequestHandler):
 
         elif u.path == "/api/install":
             self._json(install.status())
+
+        elif u.path == "/api/shortcut":
+            try:
+                self._json(shortcut.status())
+            except (OSError, subprocess.SubprocessError, ValueError):
+                self._json({"error": tr("srv.sc.fail")})
 
         elif u.path == "/api/tags":
             qs = parse_qs(u.query)
@@ -1325,6 +1337,12 @@ class Handler(BaseHTTPRequestHandler):
 
         elif u.path == "/api/install/full":
             self._json(install.request_full())
+
+        elif u.path == "/api/shortcut/remove":
+            try:
+                self._json(shortcut.remove())
+            except (OSError, subprocess.SubprocessError, ValueError):
+                self._json({"error": tr("srv.sc.fail")})
 
         elif u.path == "/api/files":
             with DB_WRITE_LOCK:

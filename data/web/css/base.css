@@ -1606,6 +1606,9 @@ button.tr:hover, button.tr:focus-visible { background: var(--p3); }
 
 /* ── 訓練空間的 01 資料集（打標台，dataset.js）── */
 .dspanel { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+/* 左欄比畫面高時是整欄捲動，項目不要被壓扁：帶 overflow: hidden 的項目最小高度是 0，會被壓到看不見
+   （打標頁 1600×900 時「打標籤模型：…」那行高度 0） */
+.dspanel > * { flex: none; }
 .dsrow { display: flex; gap: 6px; align-items: center; }
 .dsrow > .find { flex: 1; min-width: 0; }
 .dsrecent { max-height: 160px; }
